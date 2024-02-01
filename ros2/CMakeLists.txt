@@ -7,9 +7,45 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclpy REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rosbag2_cpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(rosgraph_msgs REQUIRED)
+find_package(diagnostic_msgs REQUIRED)
+
+
+
+install(DIRECTORY
+  config launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+# Include Cpp "include" directory
+include_directories(include)
+
+add_executable(ros_bag_player src/ros_bag_player.cpp)
+ament_target_dependencies(ros_bag_player rclcpp rosbag2_cpp std_msgs 
+                          geometry_msgs sensor_msgs nav_msgs rosgraph_msgs
+                          diagnostic_msgs) 
+# Install Cpp executables
+install(TARGETS
+ros_bag_player
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+
+# Install Python modules
+ament_python_install_package(${PROJECT_NAME})
+# Install Python executables
+install(PROGRAMS
+  scripts/database_creator.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
