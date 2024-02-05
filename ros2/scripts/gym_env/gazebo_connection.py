@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import rospy
+import rclpy
 from std_srvs.srv import Empty
 from gazebo_msgs.msg import ODEPhysics
 from gazebo_msgs.srv import SetPhysicsProperties, SetPhysicsPropertiesRequest
@@ -11,33 +11,33 @@ class GazeboConnection():
     
     def __init__(self):
         
-        self.unpause = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
-        self.pause = rospy.ServiceProxy('/gazebo/pause_physics', Empty)
-        self.reset_proxy = rospy.ServiceProxy('/gazebo/reset_simulation', Empty)
+        self.unpause = rclpy.ServiceProxy('/gazebo/unpause_physics', Empty)
+        self.pause = rclpy.ServiceProxy('/gazebo/pause_physics', Empty)
+        self.reset_proxy = rclpy.ServiceProxy('/gazebo/reset_simulation', Empty)
 
         # Setup the Gravity Controle system
         service_name = '/gazebo/set_physics_properties'
-        rospy.logdebug("Waiting for service " + str(service_name))
-        rospy.wait_for_service(service_name)
-        rospy.logdebug("Service Found " + str(service_name))
+        rclpy.logdebug("Waiting for service " + str(service_name))
+        rclpy.wait_for_service(service_name)
+        rclpy.logdebug("Service Found " + str(service_name))
 
-        self.set_physics = rospy.ServiceProxy(service_name, SetPhysicsProperties)
+        self.set_physics = rclpy.ServiceProxy(service_name, SetPhysicsProperties)
         self.init_values()
         # We always pause the simulation, important for legged robots learning
         self.pauseSim()
 
     def pauseSim(self):
-        rospy.wait_for_service('/gazebo/pause_physics')
+        rclpy.wait_for_service('/gazebo/pause_physics')
         try:
             self.pause()
-        except rospy.ServiceException, e:
+        except rclpy.ServiceException, e:
             print ("/gazebo/pause_physics service call failed")
         
     def unpauseSim(self):
         rospy.wait_for_service('/gazebo/unpause_physics')
         try:
             self.unpause()
-        except rospy.ServiceException, e:
+        except rclpy.ServiceException, e:
             print ("/gazebo/unpause_physics service call failed")
         
     def resetSim(self):
