@@ -24,6 +24,7 @@ class KrisEnv(gym.Env):
     def __init__(self):
         '''
         Initializes the KrisEnv environment        
+        +
         '''
         # TODO : Define action and observation space
         # use the rclpy parameter server to get the follwoing parameters
@@ -45,6 +46,21 @@ class KrisEnv(gym.Env):
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
+    def _reset(self):
+        pass
+        rclpy.get_logger().info("Pausing KrisEnv")
+        self.gazebo.pause_sim()
+        rclpy.get_logger().info("Resetting KrisEnv")
+        self.gazebo.resetSim()
+
+        
+        rclpy.get_logger().info("Unpausing KrisEnv")
+        self.gazebo.unpause_sim()
+    def _step(self, action):
+        pass
+    def _render(self, mode='human', close=False):
+        pass
+
 
 if __name__ == '__main__':
     pass

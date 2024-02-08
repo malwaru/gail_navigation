@@ -27,15 +27,15 @@ install(DIRECTORY
 # Include Cpp "include" directory
 include_directories(include)
 
-add_executable(ros_bag_player src/ros_bag_player.cpp)
-ament_target_dependencies(ros_bag_player rclcpp rosbag2_cpp std_msgs 
-                          geometry_msgs sensor_msgs nav_msgs rosgraph_msgs
-                          diagnostic_msgs) 
+# add_executable(ros_bag_player src/ros_bag_player.cpp)
+# ament_target_dependencies(ros_bag_player rclcpp rosbag2_cpp std_msgs 
+#                           geometry_msgs sensor_msgs nav_msgs rosgraph_msgs
+#                           diagnostic_msgs) 
 # Install Cpp executables
-install(TARGETS
-ros_bag_player
-  DESTINATION lib/${PROJECT_NAME}
-)
+# install(TARGETS
+# ros_bag_player
+#   DESTINATION lib/${PROJECT_NAME}
+# )
 
 
 # Install Python modules
