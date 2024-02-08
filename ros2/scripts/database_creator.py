@@ -14,8 +14,10 @@ import cv2
 
 
 class BagReaderNode(Node):
-    ''' Defines the bag reader node'''
     def __init__(self):
+        ''' Defines the bag reader node
+        '''
+
         super().__init__('bag_reader_node')
 
         # Basic setting to use
