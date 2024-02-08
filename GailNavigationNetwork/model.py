@@ -88,10 +88,10 @@ class Decoder(Module):
 
         return encFeatures
 
-class UNet(Module):
+class NaviNet(Module):
 
     '''
-    The UNet architecture based on the sumodules 
+    A deeplearning architecture for local navigation planning
     '''
     def __init__(self,encChannels=(3, 16, 32, 64,128,256),
 		 decChannels=(256,128,64, 32, 16),
