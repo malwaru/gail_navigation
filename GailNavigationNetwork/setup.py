@@ -39,11 +39,11 @@ assert torch_ver >= [1, 3], "Requires PyTorch >= 1.3"
 #     return ext_modules
 
 
-with open("yolox/__init__.py", "r") as f:
-    version = re.search(
-        r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-        f.read(), re.MULTILINE
-    ).group(1)
+# with open("yolox/__init__.py", "r") as f:
+#     version = re.search(
+#         r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
+#         f.read(), re.MULTILINE
+#     ).group(1)
 
 
 with open("README.md", "r") as f:
@@ -52,7 +52,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name="GailNavigationNetwork",
-    version=version,
+    version="0.1.0",
     author="Malika Navaratna",
     python_requires=">=3.10.12",
     long_description=long_description,

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from typing import Any, SupportsFloat
 import gymnasium as gym
-from gymnasium.envs.registration import register
 from gymnasium import spaces
 import rclpy
 import rclpy.node as Node
@@ -14,11 +13,7 @@ import numpy as np
 from GailNavigationNetwork.model import NaviNet
 
 
-register(
-     id="Kris-v0",
-     entry_point="kris_env:KrisEnv",
-     max_episode_steps=300,
-)
+
 class KrisEnv(gym.Env,Node):
     def __init__(self):
         super().__init__('kris_env_node')
@@ -59,6 +54,7 @@ class KrisEnv(gym.Env,Node):
 
         # Defining observation space which is the output from 
         # GailNavigationNetwork  NaviNet
+        # N_CHANNELS, HEIGHT, WIDTH = 3, 240, 320
         self.observation_space = spaces.Dict({
             'current_pose': spaces.Box(low=-np.inf, high=np.inf, shape=(7,1), dtype=np.float32),
             'rgb_image': spaces.Box(low=0, high=255, shape=(self.color_camera_height, self.color_camera_width, 3), dtype=np.uint8),
