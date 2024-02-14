@@ -22,8 +22,7 @@ class BagReaderNode(Node):
 
         # Basic setting to use
         # Define the HDF5 file
-        file_path="/home/malika/Documents/workspace/Bonn_Stuff/master_thesis/code/ros2_ws/src/gail_navigation\
-        /GailNavigationNetwork/data/traj1.hdf5"
+        file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
         self.hdf5_file = h5py.File(file_path, "w")
         self.image_shape=(240,320)
         self.image_compression_ratio=1.0
@@ -56,7 +55,7 @@ class BagReaderNode(Node):
         self.bridge = CvBridge()
 
         # Create a timer to read bag data every n seconds
-        self.create_timer( self.bag_read_freq, self.read_bag_data)
+        self.create_timer(self.bag_read_freq, self.read_bag_data)
 
         # The topic list to read from the bag file
         self.topics_list = [
@@ -166,11 +165,13 @@ class BagReaderNode(Node):
         # Filter odom dataset
         self.odoms_filtered=np.vstack((self.odoms_filtered,self.odoms_filtered[-1,:]))
         self.odoms_filtered=np.delete(self.odoms_filtered,0,axis=0)
+        self.get_logger().info("The odom shape is: {}".format(self.odoms_filtered.shape))
         self.odom_data.create_dataset("odom_data_filtered", data=self.odoms_filtered)
 
         self.odoms_wheel=np.vstack((self.odoms_wheel,self.odoms_wheel[-1,:]))
         self.odoms_wheel=np.delete(self.odoms_wheel,0,axis=0)
         self.odom_data.create_dataset("odom_data_wheel", data=self.odoms_wheel)
+        self.get_logger().info("The odom shape is: {}".format(self.odoms_wheel.shape))
 
         # Create goal dataset
         goal_data = [self.goal_pose_data.pose.position.x, 
@@ -182,7 +183,9 @@ class BagReaderNode(Node):
                      self.goal_pose_data.pose.orientation.w]
         #Create the relative goal pose from each location
         goal_data=np.repeat(goal_data,len(self.odoms_filtered),axis=0)
+        self.get_logger().info("The goal shape is: {}".format(goal_data.shape))
         target=goal_data-self.odoms_filtered
+        self.get_logger().info("The target shape is: {}".format(target.shape))
         self.odom_data.create_dataset("target_vector", data=target)
 
     def gps_fix_callback(self, msg):
