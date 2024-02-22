@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-from typing import Any, SupportsFloat
+from typing import Any
 import gymnasium as gym
 from gymnasium import spaces
 import rclpy
 import rclpy.node as Node
 from sensor_msgs.msg import Image,CameraInfo
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PointStamped, Twist,PoseStamped
+from geometry_msgs.msg import Twist,PoseStamped
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -54,13 +54,15 @@ class KrisEnv(gym.Env,Node):
 
         # Defining observation space which is the output from 
         # GailNavigationNetwork  NaviNet
-        # N_CHANNELS, HEIGHT, WIDTH = 3, 240, 320
+        # The channel shape are taken from the output of the NaviNet
         self.observation_space = spaces.Dict({
-            'current_pose': spaces.Box(low=-np.inf, high=np.inf, shape=(7,1), dtype=np.float32),
-            'rgb_image': spaces.Box(low=0, high=255, shape=(self.color_camera_height, self.color_camera_width, 3), dtype=np.uint8),
-            'depth_image': spaces.Box(low=0, high=255, shape=(self.depth_camera_height, self.depth_camera_width, 1), dtype=np.uint8)
+            'target_vector': spaces.Box(low=-100.0, high=100.0, shape=(1,7), dtype=np.float32),
+            'rgb_features': spaces.Box(low=-np.inf, high=np.inf, shape=(1280, 8, 10), dtype=np.float32),
+            'depth_image': spaces.Box(low=-np.inf, high=np.inf, shape=(2,318), dtype=np.float32)
         })
 
+
+        self.model= NaviNet()
 
         
     def depth_image_raw_callback(self, msg):
@@ -108,8 +110,15 @@ class KrisEnv(gym.Env,Node):
         ========
         the image from the camera
         '''
-        
-        return NotImplementedError
+
+        rgb_features, depth_features = self.model(self.image_raw_data,
+                                                  self.depth_image_raw_data)
+        observation = {
+            'target_vector': self.goal_pose_data,
+            'rgb_features': rgb_features.numpy(),
+            'depth_image': depth_features.numpy()
+        }
+        return observation
     def _take_action(self,action):
         return NotImplementedError
 
@@ -117,8 +126,12 @@ class KrisEnv(gym.Env,Node):
         reward=0.0 
         return reward
     
-    def _is_done(self):
-        return NotImplementedError
+    def _is_done(self,observation):
+        target_vector = observation['target_vector']
+        if np.linalg.norm(target_vector) < 0.01:
+            return True
+        else:
+            return False
     
     def do_action(self,action):
         '''
@@ -153,7 +166,7 @@ class KrisEnv(gym.Env,Node):
         done=self.do_action(action)
         observation = self._get_obs()
         reward = self._get_reward()
-        terminated = self._is_done()
+        terminated = self._is_done(observation)
         info={}
         return observation, reward, terminated, False, info
     

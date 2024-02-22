@@ -1,14 +1,14 @@
-from GailNavigationNetwork import utilities
 import torch
-from torch.nn import Conv2d, Linear
+from torch.nn import Conv2d, Linear,Parameter
 from torch.nn import Module
-from torchvision.models import resnet18, ResNet18_Weights
+from torchvision.models import efficientnet_b1,EfficientNet_B1_Weights
+
 
 
 class RGBNet(Module):
-    def __init__(self, dims=(120,160,3),ablation_depth=2):
+    def __init__(self,ablation_depth=2):
         super().__init__()
-        resnet_model = resnet18(weights=ResNet18_Weights.DEFAULT)
+        resnet_model = efficientnet_b1(weights=EfficientNet_B1_Weights.IMAGENET1K_V2)
         modules = list(resnet_model.children())[:-ablation_depth]
         self.backbone = torch.nn.Sequential(*modules)
 
@@ -17,20 +17,22 @@ class RGBNet(Module):
         return x
 
 class DepthNet(Module):
-    def __init__(self,dims=(120,160,1)):
-        super(DepthNet, self).__init__()
-        self.conv1 = Conv2d(1, 16, kernel_size=3, stride=1, padding=1)
-        self.conv2 = Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
-        self.fc1 = Linear(32 * dims[0] * dims[1] // 4, 128)  # Adjust the input size based on your depth image size
+    def __init__(self):
+        super().__init__()
+        self.filter = Conv2d(in_channels=1, out_channels=2, kernel_size=3, 
+                             stride=1, padding=0, bias=False)
 
-    def forward(self, x):
-        x = self.conv1(x)
-        x = torch.relu(x)
-        x = self.conv2(x)
-        x = torch.relu(x)
-        x = torch.flatten(x, 1)
-        x = self.fc1(x)
-        x = torch.relu(x)
+        Gx = torch.tensor([[2.0, 0.0, -2.0], [4.0, 0.0, -4.0], [2.0, 0.0, -2.0]])
+        Gy = torch.tensor([[2.0, 4.0, 2.0], [0.0, 0.0, 0.0], [-2.0, -4.0, -2.0]])
+        G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
+        G = G.unsqueeze(1)
+        self.filter.weight = Parameter(G, requires_grad=False)
+
+    def forward(self, img):
+        x = self.filter(img)
+        x = torch.mul(x, x)
+        x = torch.sum(x, dim=1, keepdim=True)
+        x = torch.sqrt(x)
         return x
 
 class NaviNet(Module):
@@ -38,19 +40,15 @@ class NaviNet(Module):
     A deeplearning architecture for local navigation planning
     '''
     def __init__(self,
-                 image_dims=(120,160),
+                 image_dims=(240,320),
                  goal_dims=7):
          super(NaviNet, self).__init__()
-         self.depth_net = DepthNet(dims=(image_dims[0],image_dims[1],1))
-         self.rgb_net = RGBNet(dims=(image_dims[0],image_dims[1],3))
-         self.fc_goal_pose = Linear(goal_dims[0], 128) 
+         self.depth_net = DepthNet()
+         self.rgb_net = RGBNet(ablation_depth=2)
+         self.fc_goal_pose = Linear(goal_dims, 128) 
 
-    def forward(self, rgb_image, depth_image, goal_pose):
-        rgb_features = self.rgb_net(rgb_image)
-        depth_features = self.depth_net(depth_image)
-        goal_pose = torch.relu(self.fc_goal_pose(goal_pose))
-        
-        # Concatenate features
-        concatenated_features = torch.cat((rgb_features.squeeze(), depth_features, goal_pose), dim=1)
-        
-        return concatenated_features
+    def forward(self, rgb_image, depth_image):
+        rgb_features = self.rgb_net(rgb_image).squeeze()
+        depth_features = self.depth_net(depth_image).squeeze()
+    
+        return rgb_features, depth_features
