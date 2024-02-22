@@ -144,7 +144,7 @@ class KrisEnv(gym.Env,Node):
         super().reset(seed=seed)
 
         # We need to reset the environment to its initial state
-    def step(self, action: Any) -> tuple[Any, float, bool, bool, dict[str, Any]]:
+    def step(self, action: Any) :
         '''
         
         '''
