@@ -58,7 +58,7 @@ class KrisEnv(gym.Env,Node):
         self.observation_space = spaces.Dict({
             'target_vector': spaces.Box(low=-100.0, high=100.0, shape=(1,7), dtype=np.float32),
             'rgb_features': spaces.Box(low=-np.inf, high=np.inf, shape=(1280, 8, 10), dtype=np.float32),
-            'depth_image': spaces.Box(low=-np.inf, high=np.inf, shape=(2,318), dtype=np.float32)
+            'depth_features': spaces.Box(low=-np.inf, high=np.inf, shape=(2,318), dtype=np.float32)
         })
 
 
@@ -113,14 +113,18 @@ class KrisEnv(gym.Env,Node):
 
         rgb_features, depth_features = self.model(self.image_raw_data,
                                                   self.depth_image_raw_data)
+        target_vector = self.goal_pose_data - self.odoms_filtered
         observation = {
-            'target_vector': self.goal_pose_data,
+            'target_vector': target_vector,
             'rgb_features': rgb_features.numpy(),
             'depth_image': depth_features.numpy()
         }
         return observation
-    def _take_action(self,action):
-        return NotImplementedError
+    def _take_action(self,pose):
+        self.sub_goal_pose_pub(pose)
+   ## COuld also be a service call depending on the robot
+        done=True      
+        return done
 
     def _get_reward(self):
         reward=0.0 
@@ -132,12 +136,18 @@ class KrisEnv(gym.Env,Node):
             return True
         else:
             return False
+        
+    def _get_info(self):
+        target_progress = self.goal_pose_data - self.odoms_filtered
+        info = {'target_vector':np.linalg.norm(target_progress)}
+
+        return info
     
     def do_action(self,action):
         '''
         Does ROS actions based on the action passed
         '''
-        done=True
+     
         sub_goal_pose_msg = PoseStamped()
         sub_goal_pose_msg.pose.position.x = action[0].item()
         sub_goal_pose_msg.pose.position.y = action[1].item()
@@ -149,7 +159,9 @@ class KrisEnv(gym.Env,Node):
         sub_goal_pose_msg.pose.orientation.z = action[5].item()
         sub_goal_pose_msg.pose.orientation.w = action[6].item()
 
-        self.sub_goal_pose_pub(sub_goal_pose_msg)
+        done=self._take_action(sub_goal_pose_msg)
+
+        
         return done
 
     def reset(self, seed=None, options=None):
@@ -167,7 +179,7 @@ class KrisEnv(gym.Env,Node):
         observation = self._get_obs()
         reward = self._get_reward()
         terminated = self._is_done(observation)
-        info={}
+        info=self._get_info()
         return observation, reward, terminated, False, info
     
     def render(self):

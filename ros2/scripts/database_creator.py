@@ -2,6 +2,7 @@
 import io
 import rclpy
 from rclpy.node import Node
+from rclpy.logging import LoggingSeverity
 from geometry_msgs.msg import PointStamped, Twist,PoseStamped,TransformStamped
 from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import CameraInfo, Image, NavSatFix, Imu
@@ -163,13 +164,16 @@ class BagReaderNode(Node):
         self.goal_pose_data = msg
 
         # Filter odom dataset
+
         self.odoms_filtered=np.vstack((self.odoms_filtered,self.odoms_filtered[-1,:]))
         self.odoms_filtered=np.delete(self.odoms_filtered,0,axis=0)
         self.get_logger().info("The odom shape is: {}".format(self.odoms_filtered.shape))
         self.odom_data.create_dataset("odom_data_filtered", data=self.odoms_filtered)
-
+        print(f"\n \nThe odom shape  stage 1 is: {self.odoms_wheel.shape} \n")
         self.odoms_wheel=np.vstack((self.odoms_wheel,self.odoms_wheel[-1,:]))
+        print(f"The odom shape  stage 2 is: {self.odoms_wheel.shape} \n")
         self.odoms_wheel=np.delete(self.odoms_wheel,0,axis=0)
+        print(f"The odom shape  stage 3 is: {self.odoms_wheel.shape}\n \n")
         self.odom_data.create_dataset("odom_data_wheel", data=self.odoms_wheel)
         self.get_logger().info("The odom shape is: {}".format(self.odoms_wheel.shape))
 
@@ -182,11 +186,16 @@ class BagReaderNode(Node):
                      self.goal_pose_data.pose.orientation.z,
                      self.goal_pose_data.pose.orientation.w]
         #Create the relative goal pose from each location
-        goal_data=np.repeat(goal_data,len(self.odoms_filtered),axis=0)
+        # goal_data=np.repeat(goal_data,len(self.odoms_filtered),axis=0)
+        # self.get_logger().info("The goal shape is: {}".format(goal_data.shape))
+        # target=goal_data-self.odoms_filtered
+        goal_data=np.repeat(goal_data,len(self.odoms_wheel),axis=0).reshape(len(self.odoms_wheel),7)
         self.get_logger().info("The goal shape is: {}".format(goal_data.shape))
-        target=goal_data-self.odoms_filtered
+        target=goal_data-self.odoms_wheel
         self.get_logger().info("The target shape is: {}".format(target.shape))
         self.odom_data.create_dataset("target_vector", data=target)
+        self.destroy_node()
+        
 
     def gps_fix_callback(self, msg):
         self.gps_fix_data = msg
@@ -292,7 +301,7 @@ class BagReaderNode(Node):
                 self.imu_dataset.resize(self.imu_dataset.shape[0] + 1, axis=0)
                 self.imu_dataset[-1,:] = imu_data
 
-            elif topic == '/odom/filtered':
+            elif topic == '/odoms/filtered':
                 # Extract odometry data and append to the HDF5 dataset
                 odom_data = [self.odometry_filtered_data.pose.pose.position.x, 
                              self.odometry_filtered_data.pose.pose.position.y, 
@@ -304,7 +313,7 @@ class BagReaderNode(Node):
                              self.odometry_filtered_data.pose.pose.orientation.w]
                 self.odoms_filtered=np.vstack((self.odoms_filtered,odom_data))
             
-            elif topic=='/odom/wheel':
+            elif topic=='/odometry/wheel':
                 odom_data = [self.odometry_wheel_data.pose.pose.position.x, 
                              self.odometry_wheel_data.pose.pose.position.y, 
                              self.odometry_wheel_data.pose.pose.position.z,
@@ -324,6 +333,11 @@ class BagReaderNode(Node):
 
 
 def main(args=None):
+    rclpy.logging._root_logger.log(
+        'Starting recorindg to hdf5 format ...',
+        LoggingSeverity.INFO
+    )
+
     rclpy.init(args=args)
 
     bag_reader_node = BagReaderNode()
