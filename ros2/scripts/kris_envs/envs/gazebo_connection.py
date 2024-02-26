@@ -123,11 +123,10 @@ class GazeboConnection(Node):
     def respwan_robot(self):
         pkg_share = FindPackageShare('kris_description').find('kris_description')
         urdf_dir=os.path.join(pkg_share, 'urdf')
-    urdf = os.path.join(urdf_dir, 'KRIS.urdf')   
-    declare_joint_state_gui_cmd = launch.actions.DeclareLaunchArgument(name='gui', default_value='True',
-                                            description='Flag to enable joint_state_publisher_gui')   
-    with open(urdf, 'r') as infp:
-        robot_desc = infp.read()
+        urdf = os.path.join(urdf_dir, 'KRIS.urdf')          
+        with open(urdf, 'r') as infp:
+            robot_desc = infp.read()
+        request = SpawnEntity.Request()
 
 
     
