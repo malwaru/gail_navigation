@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-
+import os
 import rclpy
 from rclpy.node import Node
 from std_srvs.srv import Empty
 # from gazebo_msgs.msg import ODEPhysics
 from gazebo_msgs.srv import SetPhysicsProperties, SpawnEntity, DeleteEntity
+from launch_ros.substitutions import FindPackageShare
 
 
 class GazeboConnection(Node):
@@ -59,6 +60,8 @@ class GazeboConnection(Node):
 
     def reset_world(self):
         self.reset_sim()  # Assuming reset_world is equivalent to reset_simulation in ROS2
+        # ros2 service call /delete_entity gazebo_msgs/srv/DeleteEntity '{name : kris}'
+        # ros2 service call /spawn_entity gazebo_msgs/srv/SpawnEntity '{name : kris, xml : /robot_description , initial_pose : {position : {x : 10.0}}}'
         self.respwan_robot()
 
     def init_values(self):
@@ -118,6 +121,16 @@ class GazeboConnection(Node):
         return NotImplementedError
     
     def respwan_robot(self):
+        pkg_share = FindPackageShare('kris_description').find('kris_description')
+        urdf_dir=os.path.join(pkg_share, 'urdf')
+    urdf = os.path.join(urdf_dir, 'KRIS.urdf')   
+    declare_joint_state_gui_cmd = launch.actions.DeclareLaunchArgument(name='gui', default_value='True',
+                                            description='Flag to enable joint_state_publisher_gui')   
+    with open(urdf, 'r') as infp:
+        robot_desc = infp.read()
+
+
+    
         return NotImplementedError
 
 
