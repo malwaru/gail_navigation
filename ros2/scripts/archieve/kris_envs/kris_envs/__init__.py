@@ -1,7 +1,6 @@
 from gymnasium.envs.registration import register
-
 register(
-     id="Kris-v0",
-     entry_point="kris_env:KrisEnv",
+     id="kris_envs/Kris-v0",
+     entry_point="kris_envs.envs:KrisEnv",
      max_episode_steps=300,
 )

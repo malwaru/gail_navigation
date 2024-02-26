@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-from typing import Any
 import gymnasium as gym
 from gymnasium import spaces
 import rclpy
-import rclpy.node as Node
+from rclpy.node import Node
 from sensor_msgs.msg import Image,CameraInfo
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist,PoseStamped
@@ -11,12 +9,13 @@ from cv_bridge import CvBridge
 import cv2
 import numpy as np
 from GailNavigationNetwork.model import NaviNet
+from stable_baselines3.common.env_checker import check_env
 
 
 
 class KrisEnv(gym.Env,Node):
     def __init__(self):
-        super().__init__('kris_env_node')
+        super(KrisEnv,self).__init__('kris_env_node')
 
         #ROS initializations
         self.image_dim=(240,320)          
@@ -169,7 +168,7 @@ class KrisEnv(gym.Env,Node):
         super().reset(seed=seed)
 
         # We need to reset the environment to its initial state
-    def step(self, action: Any) :
+    def step(self, action) :
         '''
         
         '''
@@ -193,16 +192,5 @@ class KrisEnv(gym.Env,Node):
         '''
         return NotImplementedError
 
-# def main(args=None):
-#     rclpy.init(args=args)
-
-#     bag_reader_node = KrisEnv()
-
-#     rclpy.spin(bag_reader_node)
-
-#     bag_reader_node.destroy_node()
-#     rclpy.shutdown()
-
-
-# if __name__ == '__main__':
-#     main()
+# env=KrisEnv
+# check_env(env)

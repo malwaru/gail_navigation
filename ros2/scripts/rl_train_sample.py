@@ -1,7 +1,7 @@
 import gymnasium as gym
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.evaluation import evaluate_policy
-from kris_env.kris_env import KrisEnv
+from kris_envs.envs.kris_env import KrisEnv
 import rclpy
 
 # Create custom environment
