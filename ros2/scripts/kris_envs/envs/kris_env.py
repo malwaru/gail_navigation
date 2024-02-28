@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from GailNavigationNetwork.model import NaviNet
 from stable_baselines3.common.env_checker import check_env
-
+from gazebo_connection import GazeboConnection
 
 
 class KrisEnv(gym.Env,Node):
@@ -33,6 +33,7 @@ class KrisEnv(gym.Env,Node):
             PoseStamped,'/sub_goal_pose', 10)
         
         self.bridge = CvBridge()
+        self.gazebo = GazeboConnection()
         self.image_raw_data = np.zeros(shape=(self.image_dim[0],
                                         self.image_dim[1],1),
                                         dtype=np.uint8)
@@ -62,6 +63,7 @@ class KrisEnv(gym.Env,Node):
 
 
         self.model= NaviNet()
+        self.model.eval()
 
         
     def depth_image_raw_callback(self, msg):
