@@ -11,6 +11,7 @@ import numpy as np
 from GailNavigationNetwork.model import NaviNet
 from stable_baselines3.common.env_checker import check_env
 from gail_navigation.gazebo_connection import GazeboConnection
+# from ...gazebo_connection import GazeboConnection
 
 import gymnasium as gym
 import numpy as np

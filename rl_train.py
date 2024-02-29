@@ -1,7 +1,7 @@
 import gymnasium as gym
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
-from kris_envs.envs.kris_env import KrisEnv
+from gail_navigation.kris_envs.envs.kris_env import KrisEnv
 import rclpy
 import numpy as np
 from imitation.algorithms.adversarial.gail import GAIL
@@ -10,56 +10,30 @@ from imitation.util.networks import RunningNorm
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy
 from stable_baselines3.common.evaluation import evaluate_policy
-from imitation.data.types import Trajectory,Transitions,TransitionsMinimal
+from imitation.data.types import Trajectory
 import h5py
 from GailNavigationNetwork.model import NaviNet
-import torch
-from torchvision.transforms import v2
-
-
-def preprocess(rgb_image,depth_image):
-
-    rgb_image =  torch.from_numpy(rgb_image)
-    rgb_image=torch.permute(rgb_image, (2, 0, 1))
-    depth_image =  np.expand_dims(depth_image, axis=0)
-    depth_image =  torch.from_numpy(depth_image)
-
-    rgb_transform =  v2.Compose([                      
-                        v2.ToDtype(torch.float32, scale=True),
-                        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                    ])
-    depth_transform = v2.Compose([                      
-                        v2.ToDtype(torch.float32, scale=True),
-                        v2.Normalize(mean=[0.485], std=[0.229]),
-                    ])
-    rgb_image = rgb_transform(rgb_image)
-    depth_image = depth_transform(depth_image)
-    return rgb_image,depth_image
 
 # Create custom environment
 rclpy.init()
 env = KrisEnv()
 SEED = 42
-DEVICE="cuda"
 file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
 read_file= h5py.File(file_path, "r")
-model= NaviNet().to(DEVICE)
-model.eval()
+model= NaviNet()
 len= read_file['kris_dynamics']['odom_data']['target_vector'].shape[0]
 obs=[]
 acts=[]
 for i in range(len):
     target=read_file['kris_dynamics']['odom_data']['target_vector'][i]
-    rgb=read_file['images']['rgb_data'][i]
+    rgb=model.forwardread_file['images']['rgb_data'][i]
     depth=read_file['images']['depth_data'][i]
-    rgb,depth=preprocess(rgb,depth)
-    (rgb, depth) = (rgb.to(DEVICE), depth.to(DEVICE))
-    rgb_features, depth_features = model(rgb.unsqueeze(0),depth.unsqueeze(0))
-    rgb_features=rgb_features.cpu().detach().numpy()
-    depth_features=depth_features.cpu().detach().numpy()
+    rgb_features, depth_features = model.forward(rgb,depth)
     act=read_file['kris_dynamics']['odom_data']['odom_data_wheel'][i]
-    obs.append([target,rgb_features,depth_features]) 
+    obs.append([target,rgb_features,depth_features])
+ 
     acts.append(act)
+# print(obs)
 
 del acts[-1]
 dones=np.zeros(shape=(len,1))

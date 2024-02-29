@@ -9,6 +9,7 @@ from gazebo_msgs.srv import SetPhysicsProperties, SpawnEntity, DeleteEntity
 from geometry_msgs.msg import Pose
 from ament_index_python.packages import get_package_share_directory
 import numpy as np
+import random
 
 
 class GazeboConnection(Node):
@@ -23,12 +24,12 @@ class GazeboConnection(Node):
         self.delete_model = self.create_client(DeleteEntity, '/delete_entity')
 
         # Setup the Gravity Control system
-        service_name = '/gazebo/set_parameters'
-        self.set_physics = self.create_client(SetPhysicsProperties, service_name)
-        self.get_logger().info("Waiting for service " + str(service_name))
-        while not self.set_physics.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("Service not available, waiting again...")
-        self.get_logger().info("Service Found " + str(service_name))
+        # service_name = '/gazebo/set_parameters'
+        # self.set_physics = self.create_client(SetPhysicsProperties, service_name)
+        # self.get_logger().info("Waiting for service " + str(service_name))
+        # while not self.set_physics.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info("Service not available, waiting again...")
+        # self.get_logger().info("Service Found " + str(service_name))
 
         ## Parameters for robot spawn
 
@@ -42,7 +43,7 @@ class GazeboConnection(Node):
         # self.init_values()
         # We always pause the simulation, important for legged robots learning
         # self.pause_sim()
-        self.spawn_robot()
+        # self.spawn_robot()
 
     def pause_sim(self):
         request = Empty.Request()
@@ -126,7 +127,7 @@ class GazeboConnection(Node):
         goal_poses = [(x, y) for x in x_range for y in y_range if np.sqrt((x - origin_x)**2 + (y - origin_y)**2) <= max_diff]
 
         # Randomly select a goal pose from the list
-        goal_x, goal_y = np.random.choice(goal_poses)
+        goal_x, goal_y = random.choice(goal_poses)
         goal_yaw = self.quaternion_from_euler(0.0,0.0,np.random.uniform(0, 2 * np.pi) )  # Assuming yaw is in radians
 
         origin_pose = Pose()
@@ -191,7 +192,7 @@ class GazeboConnection(Node):
         # Delete entity from gazebo on shutdown if bond flag enabled
         self.get_logger().info(f'Deleting entity {self.entity} ')
         client = self.create_client(
-            DeleteEntity, self.entity)
+            DeleteEntity, '/delete_entity')
         if client.wait_for_service(timeout_sec=self.timeout):
             req = DeleteEntity.Request()
             req.name = self.entity
@@ -227,7 +228,7 @@ class GazeboConnection(Node):
         origin, goal = self.generate_poses(max_val=40.0, min_val=-40.0, max_diff=10.0)
         f = open(self.urdf, 'r')
         entity_xml = f.read()
-        client = self.create_client(SpawnEntity, 'kris')
+        client = self.create_client(SpawnEntity,'/spawn_entity')
         if client.wait_for_service(timeout_sec=self.timeout):
             req = SpawnEntity.Request()
             req.name = self.entity

@@ -63,8 +63,9 @@ class NaviNet(Module):
 
     def forward(self, rgb_image, depth_image):
         # Preprocess the images
-        _rgb_image,_depth_image=self.preprocess(rgb_image,depth_image)
-        rgb_features = self.rgb_net(_rgb_image).squeeze()
-        depth_features = self.depth_net(_depth_image).squeeze()
-    
-        return rgb_features, depth_features
+        # _rgb_image,_depth_image=self.preprocess(rgb_image,depth_image)
+        rgb_features = self.rgb_net(rgb_image)
+        rgb_features = rgb_features.squeeze()
+        depth_features = self.depth_net(depth_image)
+        depth_features = depth_features.squeeze()
+        return (rgb_features, depth_features)
