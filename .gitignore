@@ -22,4 +22,6 @@ venv.bak/
 
 #vscode
 .vscode/*
+.pyc
+__pycache__/*
 

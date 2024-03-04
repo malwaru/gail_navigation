@@ -46,26 +46,9 @@ class NaviNet(Module):
          super(NaviNet, self).__init__()
          self.depth_net = DepthNet()
          self.rgb_net = RGBNet(ablation_depth=2)
-         self.fc_goal_pose = Linear(goal_dims, 128) 
-
-    def preprocess(self,rgb_image,depth_image):
-        rgb_transform =  v2.Compose([                      
-                            v2.ToDtype(torch.float32, scale=True),
-                            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                        ])
-        depth_transform = v2.Compose([                      
-                            v2.ToDtype(torch.float32, scale=True),
-                            v2.Normalize(mean=[0.485], std=[0.229]),
-                        ])
-        rgb_image = rgb_transform(rgb_image)
-        depth_image = depth_transform(depth_image)
-        return rgb_image,depth_image
+        #  self.fc_goal_pose = Linear(goal_dims, 128)   
 
     def forward(self, rgb_image, depth_image):
-        # Preprocess the images
-        # _rgb_image,_depth_image=self.preprocess(rgb_image,depth_image)
-        rgb_features = self.rgb_net(rgb_image)
-        rgb_features = rgb_features.squeeze()
-        depth_features = self.depth_net(depth_image)
-        depth_features = depth_features.squeeze()
+        rgb_features = self.rgb_net(rgb_image).squeeze()
+        depth_features = self.depth_net(depth_image).squeeze()
         return (rgb_features, depth_features)
