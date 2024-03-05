@@ -14,6 +14,7 @@ class RGBNet(Module):
         self.backbone = torch.nn.Sequential(*modules)
 
     def forward(self, x):
+        print(f"x.shape{x.shape}")
         x = self.backbone(x)
         return x
 

@@ -1,23 +1,28 @@
-import gymnasium as gym
 from stable_baselines3 import PPO
-# from stable_baselines3.common.evaluation import evaluate_policy
 from kris_envs.envs.kris_env import KrisEnv
-import rclpy
-import numpy as np
 from imitation.algorithms.adversarial.gail import GAIL
 from imitation.rewards.reward_nets import BasicRewardNet,CnnRewardNet
 from imitation.util.networks import RunningNorm
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy, CnnPolicy
-from stable_baselines3.common.evaluation import evaluate_policy
 from imitation.data.types import Trajectory,DictObs
 from imitation.data import rollout
-
+from gymnasium.wrappers import TimeLimit
+from imitation.data.wrappers import RolloutInfoWrapper
+from stable_baselines3.common.vec_env import DummyVecEnv
+import rclpy
+import numpy as np
 import h5py
 from GailNavigationNetwork.model import NaviNet
 import torch
 from torchvision.transforms import v2
 
+def _make_env(max_ep_steps=500):
+    """Helper function to create a single environment. Put any logic here, but make sure to return a RolloutInfoWrapper."""
+    _env = KrisEnv()
+    _env = TimeLimit(_env, max_episode_steps=max_ep_steps)
+    _env = RolloutInfoWrapper(_env)
+    return _env
 
 def preprocess(rgb_image,depth_image):
 
@@ -67,10 +72,10 @@ def create_demos(file_path,DEVICE="cuda"):
         rgb,depth=preprocess(rgb,depth)
         (rgb, depth) = (rgb.to(DEVICE), depth.to(DEVICE))
         rgb_features, depth_features = model(rgb.unsqueeze(0),depth.unsqueeze(0))
-        rgb_features=rgb_features.numpy(force=True)
-        depth_features=depth_features.numpy(force=True)
-        rgbs.append(rgb)
-        depths.append(depth)
+        rgb_features=rgb_features.detach().cpu().numpy()
+        depth_features=depth_features.detach().cpu().numpy()
+        rgbs.append(rgb_features)
+        depths.append(depth_features)
         targets.append(target) 
         acts.append(act)
         
@@ -79,16 +84,20 @@ def create_demos(file_path,DEVICE="cuda"):
     dones=[False for i in range(len)]
     dones[-1]=True
     infos= [{} for i in range(len-1)]
-    print(f"Creating rolloutsf {rgb_features.shape} {depth_features.shape} ")
-    obs_dict=DictObs( {'target_vector':np.array(targets),
-            'rgb_features':np.array(rgbs),
-            'depth_features':np.array(depths)})
+    rgbs=np.array(rgbs)
+    depths=np.array(depths)
+    targets=np.array(targets)
+    print(f"[rl_train] Creating rollouts {rgbs.shape} {depths.shape} , targets {targets.shape} acts {acts.shape}")
+    obs_dict=DictObs( {'target_vector': targets,
+            'rgb_features':rgbs,
+            'depth_features': depths})
     traj = Trajectory(obs=obs_dict, acts=acts,infos=infos,terminal=dones)
 
     return rollout.flatten_trajectories([traj])
 
 
-def train_gail(rollouts):
+
+def train_gail(rollouts,no_envs=2):
     '''
     Trains the GAIL model
     Args:
@@ -100,13 +109,17 @@ def train_gail(rollouts):
     # Create custom environment
     rclpy.init()
     env = KrisEnv()
+    env = TimeLimit(env, max_episode_steps=500)
+    venv = DummyVecEnv([_make_env for _ in range(no_envs)])
+
+
     SEED = 42
 
 
 
     learner = PPO(
         env=env,
-        policy=CnnPolicy,
+        policy=MlpPolicy,
         batch_size=64,
         ent_coef=0.0,
         learning_rate=0.0004,
@@ -114,28 +127,29 @@ def train_gail(rollouts):
         n_epochs=5,
         seed=SEED,
     )
-    reward_net = CnnRewardNet(
+    reward_net = BasicRewardNet(
         observation_space=env.observation_space,
         action_space=env.action_space,
         normalize_input_layer=RunningNorm,
     )
     gail_trainer = GAIL(
         demonstrations=rollouts,
-        demo_batch_size=1024,
+        demo_batch_size=24,
         gen_replay_buffer_capacity=512,
         n_disc_updates_per_round=8,
-        venv=env,
+        venv=venv,
         gen_algo=learner,
         reward_net=reward_net,
     )
 
     env.seed(SEED)
-    learner_rewards_before_training, _ = evaluate_policy(
-        learner, env, 100, return_episode_rewards=True
-    )
+    # learner_rewards_before_training, _ = evaluate_policy(
+    #     learner, env, 100, return_episode_rewards=True
+    # )
 
-    gail_trainer.train(200_000)
+    gail_trainer.train(10)
 
 if __name__ == "__main__":
     file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
     demonstrations=create_demos(file_path)
+    train_gail(demonstrations)

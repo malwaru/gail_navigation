@@ -37,7 +37,7 @@ class KrisEnv(gym.Env,Node):
         self.sub_goal_pose_pub = self.create_publisher(
             PoseStamped,'/sub_goal_pose', 10)
         
-        self.bridge = CvBridge()
+        self._cvbridge = CvBridge()
         self.gazebo = GazeboConnection()
         self.image_raw_data = np.zeros(shape=(self.image_dim[0],
                                         self.image_dim[1],1),
@@ -49,6 +49,12 @@ class KrisEnv(gym.Env,Node):
         self.goal_pose_data = np.zeros(shape=(7,1),dtype=np.float32)
         self.odoms_filtered = np.zeros(shape=(7,1),dtype=np.float32)
         
+
+        while self.depth_camera_info_data is None:
+            self.get_logger().info("Waiting for camera_info")
+            rclpy.spin_once(self)
+
+
         # gym initializations
         # Defining action space where max subgoal position is 0.5 and 
         # max subgoal orientation is 0.785398 radians
@@ -72,15 +78,16 @@ class KrisEnv(gym.Env,Node):
 
         
     def depth_image_raw_callback(self, msg):
-        depth_image_raw_data = self.bridge.imgmsg_to_cv2(msg, 
+        depth_image_raw_data = self._cvbridge.imgmsg_to_cv2(msg, 
                                                 desired_encoding="passthrough")
         ## The scale of depth pixels is 0.001|  16bit depth, one unit is 1 mm | taken from data sheet 
         self.depth_image_raw_data = np.array(depth_image_raw_data, 
                                              dtype=np.uint16)*0.001
     
     def image_raw_callback(self, msg):
-        self.image_raw_data = self.bridge.imgmsg_to_cv2(msg,
-                                                        cv2.COLOR_BGR2RGB)
+        self.image_raw_data = cv2.cvtColor(self._cvbridge.imgmsg_to_cv2(msg),
+                                           cv2.COLOR_BGR2RGB)
+           
                 
     def odometry_filtered_callback(self, msg):
         odom_data=[msg.pose.pose.position.x, 
@@ -172,8 +179,12 @@ class KrisEnv(gym.Env,Node):
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
-        super().reset(seed=seed)
-        self.gazebo.resetSim()
+        super().reset()
+        self.gazebo.reset_sim()
+
+        new_obs = self._get_obs()
+
+        return new_obs,{}
 
         # We need to reset the environment to its initial state
     def step(self, action) :
