@@ -2,6 +2,8 @@ from typing import Tuple
 import torch
 import os
 import numpy as np
+import torch
+from torchvision.transforms import v2
 ##Path to data folder
 # CURRENT_PATH=os.getcwd()
 # DATASET_PATH=os.path.join(CURRENT_PATH,"data")
@@ -9,9 +11,9 @@ import numpy as np
 # MASK_DATASET_PATH=os.path.join(DATASET_PATH,"masks")
 # print(f"the data path is at {DATASET_PATH} \n and the masks are at {MASK_DATASET_PATH}\n")
 ##Train | Validation | Test Split
-SPLIT=[0.5,0,25,0.25]
+# SPLIT=[0.5,0,25,0.25]
 #Test data use 15% of all data rest for training 
-TEST_SPLIT=0.15
+# TEST_SPLIT=0.15
 ##Check if GPU available 
 if torch.cuda.is_available():
     DEVICE="cuda"
@@ -63,8 +65,38 @@ def sobel_torch_version(img_np, torch_sobel):
     img_edged = tensor_to_np_img(torch_sobel(img_tensor))
     img_edged = np.squeeze(img_edged)
     return img_edged
-    
 
+def preprocess(image):
+    ''''
+    Permute the image channel,width and height
+    Normalize the image
+
+    Finally add a batch dimension to the image
+
+    
+    '''
+    if len(image.shape) == 2:
+
+        image =  np.expand_dims(image, axis=0)
+        image =  torch.from_numpy(image)
+        depth_transform = v2.Compose([                      
+                        v2.ToDtype(torch.float32, scale=True),
+                        v2.Normalize(mean=[0.485], std=[0.229]),
+                    ])
+        image = depth_transform(image)
+
+    elif len(image.shape)==3:
+        image =  torch.from_numpy(image)
+        image=torch.permute(image, (2, 0, 1))
+        rgb_transform =  v2.Compose([                      
+                        v2.ToDtype(torch.float32, scale=True),
+                        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                    ])
+        image = rgb_transform(image)
+
+
+
+    return image.unsqueeze(0)
 
 
 

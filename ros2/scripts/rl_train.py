@@ -14,34 +14,38 @@ import rclpy
 import numpy as np
 import h5py
 from GailNavigationNetwork.model import NaviNet
-import torch
-from torchvision.transforms import v2
+from GailNavigationNetwork.utilities import preprocess
+# import torch
+# from torchvision.transforms import v2
 
 def _make_env(max_ep_steps=500):
-    """Helper function to create a single environment. Put any logic here, but make sure to return a RolloutInfoWrapper."""
+    """
+    Helper function to create a single environment. For imitation 
+     library in rolloutwrapper datatype
+    """
     _env = KrisEnv()
     _env = TimeLimit(_env, max_episode_steps=max_ep_steps)
     _env = RolloutInfoWrapper(_env)
     return _env
 
-def preprocess(rgb_image,depth_image):
+# def preprocess(rgb_image,depth_image):
 
-    rgb_image =  torch.from_numpy(rgb_image)
-    rgb_image=torch.permute(rgb_image, (2, 0, 1))
-    depth_image =  np.expand_dims(depth_image, axis=0)
-    depth_image =  torch.from_numpy(depth_image)
+#     rgb_image =  torch.from_numpy(rgb_image)
+#     rgb_image=torch.permute(rgb_image, (2, 0, 1))
+#     depth_image =  np.expand_dims(depth_image, axis=0)
+#     depth_image =  torch.from_numpy(depth_image)
 
-    rgb_transform =  v2.Compose([                      
-                        v2.ToDtype(torch.float32, scale=True),
-                        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                    ])
-    depth_transform = v2.Compose([                      
-                        v2.ToDtype(torch.float32, scale=True),
-                        v2.Normalize(mean=[0.485], std=[0.229]),
-                    ])
-    rgb_image = rgb_transform(rgb_image)
-    depth_image = depth_transform(depth_image)
-    return rgb_image,depth_image
+#     rgb_transform =  v2.Compose([                      
+#                         v2.ToDtype(torch.float32, scale=True),
+#                         v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+#                     ])
+#     depth_transform = v2.Compose([                      
+#                         v2.ToDtype(torch.float32, scale=True),
+#                         v2.Normalize(mean=[0.485], std=[0.229]),
+#                     ])
+#     rgb_image = rgb_transform(rgb_image)
+#     depth_image = depth_transform(depth_image)
+#     return rgb_image,depth_image
 
 def create_demos(file_path,DEVICE="cuda"):
     '''
@@ -69,11 +73,15 @@ def create_demos(file_path,DEVICE="cuda"):
         rgb=read_file['images']['rgb_data'][i]
         depth=read_file['images']['depth_data'][i]
         act=read_file['kris_dynamics']['odom_data']['odom_data_wheel'][i]
-        rgb,depth=preprocess(rgb,depth)
+        # print(f"depth shape in rollout {depth.shape}")
+        rgb=preprocess(rgb)
+        depth=preprocess(depth)
+        # rgb,depth=preprocess(rgb,depth)
         (rgb, depth) = (rgb.to(DEVICE), depth.to(DEVICE))
-        rgb_features, depth_features = model(rgb.unsqueeze(0),depth.unsqueeze(0))
+        rgb_features, depth_features = model(rgb,depth)
         rgb_features=rgb_features.detach().cpu().numpy()
         depth_features=depth_features.detach().cpu().numpy()
+        # print(f"depth feature in rollout {depth_features.shape}")
         rgbs.append(rgb_features)
         depths.append(depth_features)
         targets.append(target) 
@@ -97,7 +105,7 @@ def create_demos(file_path,DEVICE="cuda"):
 
 
 
-def train_gail(rollouts,no_envs=2):
+def train_gail(rollouts,no_envs=1):
     '''
     Trains the GAIL model
     Args:
@@ -116,7 +124,8 @@ def train_gail(rollouts,no_envs=2):
     SEED = 42
 
 
-
+    print(f"[rl_train] Training GAIL with {len(rollouts)} rollouts")
+    
     learner = PPO(
         env=env,
         policy=MlpPolicy,
@@ -127,11 +136,13 @@ def train_gail(rollouts,no_envs=2):
         n_epochs=5,
         seed=SEED,
     )
+    print(f"[rl_train] Defining rewardnet")
     reward_net = BasicRewardNet(
         observation_space=env.observation_space,
         action_space=env.action_space,
         normalize_input_layer=RunningNorm,
     )
+    print(f"[rl_train] Entering GAIL training loop ")
     gail_trainer = GAIL(
         demonstrations=rollouts,
         demo_batch_size=24,

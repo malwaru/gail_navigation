@@ -14,7 +14,6 @@ class RGBNet(Module):
         self.backbone = torch.nn.Sequential(*modules)
 
     def forward(self, x):
-        print(f"x.shape{x.shape}")
         x = self.backbone(x)
         return x
 
@@ -49,7 +48,7 @@ class NaviNet(Module):
          self.rgb_net = RGBNet(ablation_depth=2)
         #  self.fc_goal_pose = Linear(goal_dims, 128)   
 
-    def forward(self, rgb_image, depth_image):
+    def forward(self,rgb_image, depth_image):      
         rgb_features = self.rgb_net(rgb_image).squeeze()
         depth_features = self.depth_net(depth_image).squeeze()
         return (rgb_features, depth_features)
