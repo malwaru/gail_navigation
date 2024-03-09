@@ -148,6 +148,8 @@ class GazeboConnection(Node):
         goal_pose.orientation.z = goal_yaw[2]
         goal_pose.orientation.w = goal_yaw[3]
 
+        print(f"[gazebo_connection]  Origin Pose: {origin_pose.shape} Goal Pose: {goal_pose.shape}")
+
 
         return (origin_pose, goal_pose)
 

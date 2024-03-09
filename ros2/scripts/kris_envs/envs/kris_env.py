@@ -10,11 +10,8 @@ import cv2
 import numpy as np
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
-from stable_baselines3.common.env_checker import check_env
+# from stable_baselines3.common.env_checker import check_env
 from gail_navigation.gazebo_connection import GazeboConnection
-import torch
-from torchvision.transforms import v2
-
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
@@ -45,8 +42,9 @@ class KrisEnv(gym.Env,Node):
         self.image_raw_data = None
         self.depth_image_raw_data = None
         self.depth_camera_info_data = None
-        self.goal_pose_data = np.zeros(shape=(7,1),dtype=np.float32)
-        self.odoms_filtered = np.zeros(shape=(7,1),dtype=np.float32)
+        self.goal_pose_data = np.zeros(shape=(1,7),dtype=np.float32)
+        self.odoms_filtered = np.zeros(shape=(1,7),dtype=np.float32)
+        self.target_vector = np.zeros(shape=(1,7),dtype=np.float32)
 
         while self.image_raw_data is None:
             self.get_logger().info("Waiting for camera feed")
@@ -85,7 +83,7 @@ class KrisEnv(gym.Env,Node):
     def image_raw_callback(self, msg):
         self.image_raw_data = cv2.cvtColor(self._cvbridge.imgmsg_to_cv2(msg),
                                            cv2.COLOR_BGR2RGB)
-        self.get_logger().info(f"[KrisEnv::image_raw_callback]self.image_raw_data.shape{self.image_raw_data.shape}")    
+        # self.get_logger().info(f"[KrisEnv::image_raw_callback]self.image_raw_data.shape{self.image_raw_data.shape}")    
            
                 
     def odometry_filtered_callback(self, msg):
@@ -122,21 +120,20 @@ class KrisEnv(gym.Env,Node):
         ========
         the image from the camera
         '''
-        # self.get_logger().info(f"[KrisEnv::_get_obs]self.image_raw_data.shape{self.image_raw_data.shape}")
-        self.get_logger().info(f"[KrisEnv::_get_obs]self.depth_image_raw_data.shape{self.depth_image_raw_data.shape}")
         rgb_image=preprocess(self.image_raw_data)
-        depth_image=preprocess(self.depth_image_raw_data)   
-
+        depth_image=preprocess(self.depth_image_raw_data)  
         rgb_features, depth_features = self.model(rgb_image,
                                                   depth_image)
-        self.get_logger().info(f"depth feature shape {depth_features.shape}")
-        target_vector = self.goal_pose_data - self.odoms_filtered
+        # self.get_logger().info(f"depth feature shape {depth_features.shape}")
+        self.target_vector = self.goal_pose_data - self.odoms_filtered
+        self.get_logger().info(f"target vector shape {self.target_vector.shape}")
         observation = {
-            'target_vector': target_vector,
+            'target_vector': self.target_vector,
             'rgb_features': rgb_features.detach().cpu().numpy(),
             'depth_features': depth_features.detach().cpu().numpy()
         }
         return observation
+    
     def _take_action(self,pose):
         self.sub_goal_pose_pub(pose)
    ## COuld also be a service call depending on the robot
@@ -193,7 +190,10 @@ class KrisEnv(gym.Env,Node):
         # We need to reset the environment to its initial state
     def step(self, action) :
         '''
-        
+        Take a step in the environment
+        Args: It takes an action and returns the observation, reward,
+
+        Returns: observation, reward, terminated, info
         '''
         rclpy.spin_once(self)
         done=self.do_action(action)

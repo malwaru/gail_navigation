@@ -28,24 +28,6 @@ def _make_env(max_ep_steps=500):
     _env = RolloutInfoWrapper(_env)
     return _env
 
-# def preprocess(rgb_image,depth_image):
-
-#     rgb_image =  torch.from_numpy(rgb_image)
-#     rgb_image=torch.permute(rgb_image, (2, 0, 1))
-#     depth_image =  np.expand_dims(depth_image, axis=0)
-#     depth_image =  torch.from_numpy(depth_image)
-
-#     rgb_transform =  v2.Compose([                      
-#                         v2.ToDtype(torch.float32, scale=True),
-#                         v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-#                     ])
-#     depth_transform = v2.Compose([                      
-#                         v2.ToDtype(torch.float32, scale=True),
-#                         v2.Normalize(mean=[0.485], std=[0.229]),
-#                     ])
-#     rgb_image = rgb_transform(rgb_image)
-#     depth_image = depth_transform(depth_image)
-#     return rgb_image,depth_image
 
 def create_demos(file_path,DEVICE="cuda"):
     '''
@@ -81,7 +63,7 @@ def create_demos(file_path,DEVICE="cuda"):
         rgb_features, depth_features = model(rgb,depth)
         rgb_features=rgb_features.detach().cpu().numpy()
         depth_features=depth_features.detach().cpu().numpy()
-        # print(f"depth feature in rollout {depth_features.shape}")
+        print(f"targets feature in rollout {target.shape}")
         rgbs.append(rgb_features)
         depths.append(depth_features)
         targets.append(target) 
@@ -95,7 +77,7 @@ def create_demos(file_path,DEVICE="cuda"):
     rgbs=np.array(rgbs)
     depths=np.array(depths)
     targets=np.array(targets)
-    print(f"[rl_train] Creating rollouts {rgbs.shape} {depths.shape} , targets {targets.shape} acts {acts.shape}")
+    # print(f"[rl_train] Creating rollouts {rgbs.shape} {depths.shape} , targets {targets.shape} acts {acts.shape}")
     obs_dict=DictObs( {'target_vector': targets,
             'rgb_features':rgbs,
             'depth_features': depths})
@@ -119,6 +101,7 @@ def train_gail(rollouts,no_envs=1):
     env = KrisEnv()
     env = TimeLimit(env, max_episode_steps=500)
     venv = DummyVecEnv([_make_env for _ in range(no_envs)])
+    print(f"[rl_train] Created custom vectorized environment venv shape {len(venv)} and obs{venv.observation_space,venv.action_space}" )
 
 
     SEED = 42
