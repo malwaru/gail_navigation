@@ -1,22 +1,26 @@
-#!/usr/bin/env python3
-from typing import Any
 import gymnasium as gym
 from gymnasium import spaces
 import rclpy
-import rclpy.node as Node
+from rclpy.node import Node
 from sensor_msgs.msg import Image,CameraInfo
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Twist,PoseStamped
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
 from GailNavigationNetwork.model import NaviNet
+from GailNavigationNetwork.utilities import preprocess
+# from stable_baselines3.common.env_checker import check_env
+from gail_navigation.gazebo_connection import GazeboConnection
+import gymnasium as gym
+import numpy as np
+from gymnasium import spaces
 
 
 
 class KrisEnv(gym.Env,Node):
     def __init__(self):
-        super(KrisEnv).__init__('kris_env_node')
+        super(KrisEnv,self).__init__('kris_env_node')
 
         #ROS initializations
         self.image_dim=(240,320)          
@@ -25,7 +29,7 @@ class KrisEnv(gym.Env,Node):
         self.image_raw_sub = self.create_subscription(
             Image, '/framos/image_raw', self.image_raw_callback, 10)
         self.odometry_filtered_sub = self.create_subscription(
-            Odometry, '/odometry/wheel', self.odometry_filtered_callback, 10)
+            Odometry, '/odometry/filtered', self.odometry_filtered_callback, 10)
         self.goal_pose_sub = self.create_subscription(
             PoseStamped, '/goal_pose', self.goal_pose_callback, 10)
         self.camera_info_sub = self.create_subscription(
@@ -33,17 +37,20 @@ class KrisEnv(gym.Env,Node):
         self.sub_goal_pose_pub = self.create_publisher(
             PoseStamped,'/sub_goal_pose', 10)
         
-        self.bridge = CvBridge()
-        self.image_raw_data = np.zeros(shape=(self.image_dim[0],
-                                        self.image_dim[1],1),
-                                        dtype=np.uint8)
-        self.depth_image_raw_data = np.zeros(shape=(self.image_dim[0],
-                                                      self.image_dim[1],3),
-                                                      dtype=np.uint8)
+        self._cvbridge = CvBridge()
+        self.gazebo = GazeboConnection()
+        self.image_raw_data = None
+        self.depth_image_raw_data = None
         self.depth_camera_info_data = None
-        self.goal_pose_data = np.zeros(shape=(7,1),dtype=np.float32)
-        self.odoms_filtered = np.zeros(shape=(7,1),dtype=np.float32)
-        
+        self.goal_pose_data = np.zeros(shape=(1,7),dtype=np.float32)
+        self.odoms_filtered = np.zeros(shape=(1,7),dtype=np.float32)
+        self.target_vector = np.zeros(shape=(1,7),dtype=np.float32)
+
+        while self.image_raw_data is None:
+            self.get_logger().info("Waiting for camera feed")
+            rclpy.spin_once(self)
+
+
         # gym initializations
         # Defining action space where max subgoal position is 0.5 and 
         # max subgoal orientation is 0.785398 radians
@@ -52,31 +59,32 @@ class KrisEnv(gym.Env,Node):
         self.action_space = spaces.Box(low=action_low, high=action_high,
                                        shape=(7,) ,dtype=np.float32)
 
-        while self.depth_camera_info_data is None:
-            rclpy.spin_once(self)
         # Defining observation space which is the output from 
         # GailNavigationNetwork  NaviNet
         # The channel shape are taken from the output of the NaviNet
         self.observation_space = spaces.Dict({
             'target_vector': spaces.Box(low=-100.0, high=100.0, shape=(1,7), dtype=np.float32),
             'rgb_features': spaces.Box(low=-np.inf, high=np.inf, shape=(1280, 8, 10), dtype=np.float32),
-            'depth_features': spaces.Box(low=-np.inf, high=np.inf, shape=(2,318), dtype=np.float32)
+            'depth_features': spaces.Box(low=-np.inf, high=np.inf, shape=(238,318), dtype=np.float32)
         })
 
 
         self.model= NaviNet()
+        self.model.eval()
 
         
     def depth_image_raw_callback(self, msg):
-        depth_image_raw_data = self.bridge.imgmsg_to_cv2(msg, 
+        depth_image_raw_data = self._cvbridge.imgmsg_to_cv2(msg, 
                                                 desired_encoding="passthrough")
         ## The scale of depth pixels is 0.001|  16bit depth, one unit is 1 mm | taken from data sheet 
         self.depth_image_raw_data = np.array(depth_image_raw_data, 
                                              dtype=np.uint16)*0.001
     
     def image_raw_callback(self, msg):
-        self.image_raw_data = self.bridge.imgmsg_to_cv2(msg,
-                                                        cv2.COLOR_BGR2RGB)
+        self.image_raw_data = cv2.cvtColor(self._cvbridge.imgmsg_to_cv2(msg),
+                                           cv2.COLOR_BGR2RGB)
+        # self.get_logger().info(f"[KrisEnv::image_raw_callback]self.image_raw_data.shape{self.image_raw_data.shape}")    
+           
                 
     def odometry_filtered_callback(self, msg):
         odom_data=[msg.pose.pose.position.x, 
@@ -112,16 +120,20 @@ class KrisEnv(gym.Env,Node):
         ========
         the image from the camera
         '''
-
-        rgb_features, depth_features = self.model.forward(self.image_raw_data,
-                                                  self.depth_image_raw_data)
-        target_vector = self.goal_pose_data - self.odoms_filtered
+        rgb_image=preprocess(self.image_raw_data)
+        depth_image=preprocess(self.depth_image_raw_data)  
+        rgb_features, depth_features = self.model(rgb_image,
+                                                  depth_image)
+        # self.get_logger().info(f"depth feature shape {depth_features.shape}")
+        self.target_vector = self.goal_pose_data - self.odoms_filtered
+        self.get_logger().info(f"target vector shape {self.target_vector.shape}")
         observation = {
-            'target_vector': target_vector,
-            'rgb_features': rgb_features.numpy(),
-            'depth_image': depth_features.numpy()
+            'target_vector': self.target_vector,
+            'rgb_features': rgb_features.detach().cpu().numpy(),
+            'depth_features': depth_features.detach().cpu().numpy()
         }
         return observation
+    
     def _take_action(self,pose):
         self.sub_goal_pose_pub(pose)
    ## COuld also be a service call depending on the robot
@@ -168,15 +180,22 @@ class KrisEnv(gym.Env,Node):
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
-        super().reset(seed=seed)
+        super().reset()
+        self.gazebo.reset_sim()
+
+        new_obs = self._get_obs()
+
+        return new_obs,{}
 
         # We need to reset the environment to its initial state
-    def step(self, action: Any) :
+    def step(self, action) :
         '''
-        
+        Take a step in the environment
+        Args: It takes an action and returns the observation, reward,
+
+        Returns: observation, reward, terminated, info
         '''
         rclpy.spin_once(self)
-
         done=self.do_action(action)
         observation = self._get_obs()
         reward = self._get_reward()
@@ -194,5 +213,4 @@ class KrisEnv(gym.Env,Node):
 
         '''
         return NotImplementedError
-
 
