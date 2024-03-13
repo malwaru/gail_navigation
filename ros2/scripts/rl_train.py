@@ -2,12 +2,13 @@ from stable_baselines3 import PPO
 import gymnasium as gym
 from imitation.util.util import make_vec_env
 # from kris_envs.envs.kris_env import KrisEnv
+import kris_envs
 from imitation.algorithms.adversarial.gail import GAIL
 from imitation.rewards.reward_nets import BasicRewardNet,CnnRewardNet
 from imitation.util.networks import RunningNorm
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy, CnnPolicy
-from imitation.data.types import Trajectory,DictObs
+from imitation.data.types import Trajectory,DictObs,TrajectoryWithRew
 from imitation.data import rollout
 from gymnasium.wrappers import TimeLimit
 from imitation.data.wrappers import RolloutInfoWrapper
@@ -17,7 +18,6 @@ import numpy as np
 import h5py
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
-
 
 
 # def _make_env(max_ep_steps=500):
@@ -100,26 +100,16 @@ def train_gail(rollouts,no_envs=1):
     '''    
     # Create custom environment
     rclpy.init()
-    # env = KrisEnv()
-    # env = TimeLimit(env, max_episode_steps=500)
-    # venv = DummyVecEnv([_make_env for _ in range(no_envs)])
-    # print(f"[rl_train] Created custom vectorized environment env {env.observation_space} shape  and obs{venv.observation_space,venv.action_space}" )
-
-    env = gym.make("kris_envs/KrisEnv-v0")
-
-
+   
+    # env = gym.make("kris_envs/KrisEnv-v0")
     # Create a vectorized environment for training with `imitation`
-
-    # Option A: use the `make_vec_env` helper function - make sure to pass `post_wrappers=[lambda env, _: RolloutInfoWrapper(env)]`
-    venv = make_vec_env(
+    env = make_vec_env(
         "kris_envs/KrisEnv-v0",
         rng=np.random.default_rng(),
         n_envs=4,
         post_wrappers=[lambda env, _: RolloutInfoWrapper(env)],
     )
     SEED = 42
-
-
     print(f"[rl_train] Training GAIL with {len(rollouts)} rollouts")
     
     learner = PPO(
@@ -144,7 +134,7 @@ def train_gail(rollouts,no_envs=1):
         demo_batch_size=24,
         gen_replay_buffer_capacity=512,
         n_disc_updates_per_round=8,
-        venv=venv,
+        venv=env,
         gen_algo=learner,
         reward_net=reward_net,
     )
@@ -159,4 +149,5 @@ def train_gail(rollouts,no_envs=1):
 if __name__ == "__main__":
     file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
     demonstrations=create_demos(file_path)
+    print(f"[rl_train] Demonstrations shape {demonstrations[0]}")
     train_gail(demonstrations)
