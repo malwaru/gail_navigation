@@ -8,7 +8,7 @@ from imitation.rewards.reward_nets import BasicRewardNet,CnnRewardNet
 from imitation.util.networks import RunningNorm
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy, CnnPolicy
-from imitation.data.types import Trajectory,DictObs,TrajectoryWithRew
+from imitation.data.types import Trajectory,DictObs
 from imitation.data import rollout
 from gymnasium.wrappers import TimeLimit
 from imitation.data.wrappers import RolloutInfoWrapper
@@ -19,16 +19,6 @@ import h5py
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
 
-
-# def _make_env(max_ep_steps=500):
-#     """
-#     Helper function to create a single environment. For imitation 
-#      library in rolloutwrapper datatype
-#     """
-#     _env = KrisEnv()
-#     _env = TimeLimit(_env, max_episode_steps=max_ep_steps)
-#     _env = RolloutInfoWrapper(_env)
-#     return _env
 
 
 def create_demos(file_path,DEVICE="cuda"):
@@ -65,7 +55,7 @@ def create_demos(file_path,DEVICE="cuda"):
         rgb_features, depth_features = model(rgb,depth)
         rgb_features=rgb_features.detach().cpu().numpy()
         depth_features=depth_features.detach().cpu().numpy()
-        print(f"targets feature in rollout {target.shape}")
+        # print(f"targets feature in rollout {target.shape}")
         rgbs.append(rgb_features)
         depths.append(depth_features)
         targets.append(target) 
@@ -106,7 +96,7 @@ def train_gail(rollouts,no_envs=1):
     env = make_vec_env(
         "kris_envs/KrisEnv-v0",
         rng=np.random.default_rng(),
-        n_envs=4,
+        n_envs=no_envs,
         post_wrappers=[lambda env, _: RolloutInfoWrapper(env)],
     )
     SEED = 42
@@ -129,6 +119,7 @@ def train_gail(rollouts,no_envs=1):
         normalize_input_layer=RunningNorm,
     )
     print(f"[rl_train] Entering GAIL training loop ")
+    print(f"[rl_train] venv obs shape {env.observation_space}")
     gail_trainer = GAIL(
         demonstrations=rollouts,
         demo_batch_size=24,
@@ -149,5 +140,4 @@ def train_gail(rollouts,no_envs=1):
 if __name__ == "__main__":
     file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
     demonstrations=create_demos(file_path)
-    print(f"[rl_train] Demonstrations shape {demonstrations[0]}")
     train_gail(demonstrations)
