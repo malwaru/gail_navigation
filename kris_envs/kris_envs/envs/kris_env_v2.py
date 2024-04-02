@@ -18,11 +18,11 @@ from gymnasium import spaces
 
 
 
-class KrisEnvTuple(gym.Env,Node):
+class KrisEnvRgb(gym.Env,Node):
     def __init__(self):
-        super(KrisEnvTuple,self).__init__('kris_env_node')
+        super(KrisEnvRgb,self).__init__('kris_env_node')
 
-        #ROS initializations
+        #ROS initializbgations
         self.image_dim=(240,320)          
         self.depth_image_raw_sub = self.create_subscription(
             Image, '/framos/depth/image_raw', self.depth_image_raw_callback, 10)
@@ -64,11 +64,7 @@ class KrisEnvTuple(gym.Env,Node):
         # The channel shape are taken from the output of the NaviNet
         # after passing the image through the network
         # states in the order target vector, rgb_features, depth_features
-        self.observation_space = spaces.Tuple((
-                                        spaces.Box(low=-100.0, high=100.0, shape=(7,), dtype=np.float32),
-                                        spaces.Box(low=-np.inf, high=np.inf, shape=(102400,), dtype=np.float32),
-                                        spaces.Box(low=-np.inf, high=np.inf, shape=(75684,), dtype=np.float32)
-        ))
+        self.observation_space =spaces.Box(low=-np.inf, high=np.inf, shape=(1280, 8, 10), dtype=np.float32)
 
            
         self.model= NaviNet()
@@ -127,12 +123,15 @@ class KrisEnvTuple(gym.Env,Node):
         rgb_features, depth_features = self.model(rgb_image,
                                                   depth_image)
         # self.get_logger().info(f"depth feature shape {depth_features.shape}")
-        self.target_vector = (self.goal_pose_data - self.odoms_filtered).flatten()
-        rgb_features=rgb_features.detach().cpu().numpy().flatten()
-        depth_features=depth_features.detach().cpu().numpy().flatten()
+        # self.target_vector = self.goal_pose_data - self.odoms_filtered
+        # self.get_logger().info(f"target vector shape {self.target_vector.shape}")
+        # observation = {
+        #     'target_vector': self.target_vector,
+        #     'rgb_features': rgb_features.detach().cpu().numpy(),
+        #     'depth_features': depth_features.detach().cpu().numpy()
+        # }
         
-        
-        return (self.target_vector,rgb_features,depth_features)
+        return rgb_features.detach().cpu().numpy()
     
     def _take_action(self,pose):
         self.sub_goal_pose_pub(pose)

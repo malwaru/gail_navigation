@@ -1,8 +1,8 @@
 from stable_baselines3 import PPO
 import gymnasium as gym
 from imitation.util.util import make_vec_env
-# from kris_envs.envs.kris_env import KrisEnv
 import kris_envs
+from kris_envs.wrappers.trajgen import TrajFromFile,TrajectoryAccumulator
 from imitation.algorithms.adversarial.gail import GAIL
 from imitation.rewards.reward_nets import BasicRewardNet,CnnRewardNet
 from imitation.util.networks import RunningNorm
@@ -56,9 +56,9 @@ def create_demos(file_path,DEVICE="cuda"):
         rgb_features=rgb_features.detach().cpu().numpy()
         depth_features=depth_features.detach().cpu().numpy()
         # print(f"targets feature in rollout {target.shape}")
-        rgbs.append(rgb_features)
-        depths.append(depth_features)
-        targets.append(target) 
+        rgbs.append(rgb_features.flatten())
+        depths.append(depth_features.flatten())
+        targets.append(target.flatten()) 
         acts.append(act)
         
 
@@ -91,10 +91,9 @@ def train_gail(rollouts,no_envs=1):
     # Create custom environment
     rclpy.init()
    
-    # env = gym.make("kris_envs/KrisEnv-v0")
     # Create a vectorized environment for training with `imitation`
     env = make_vec_env(
-        "kris_envs/KrisEnv-v0",
+        "kris_envs/KrisEnv-v1",
         rng=np.random.default_rng(),
         n_envs=no_envs,
         post_wrappers=[lambda env, _: RolloutInfoWrapper(env)],
@@ -140,4 +139,4 @@ def train_gail(rollouts,no_envs=1):
 if __name__ == "__main__":
     file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
     demonstrations=create_demos(file_path)
-    train_gail(demonstrations)
+    # train_gail(demonstrations)
