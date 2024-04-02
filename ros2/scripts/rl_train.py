@@ -70,10 +70,12 @@ def create_demos(file_path,DEVICE="cuda"):
     depths=np.array(depths)
     targets=np.array(targets)
     # print(f"[rl_train] Creating rollouts {rgbs.shape} {depths.shape} , targets {targets.shape} acts {acts.shape}")
-    obs_dict=DictObs( {'target_vector': targets,
-            'rgb_features':rgbs,
-            'depth_features': depths})
-    traj = Trajectory(obs=obs_dict, acts=acts,infos=infos,terminal=dones)
+    # obs_dict=DictObs( {'target_vector': targets,
+    #         'rgb_features':rgbs,
+    #         'depth_features': depths})
+    obs_array=np.concatenate((targets,rgbs,depths),axis=1)
+    print(f"[rl_train] obs array shape {obs_array.shape}")
+    traj = Trajectory(obs=obs_array, acts=acts,infos=infos,terminal=dones)
 
     return rollout.flatten_trajectories([traj])
 
@@ -134,9 +136,9 @@ def train_gail(rollouts,no_envs=1):
     #     learner, env, 100, return_episode_rewards=True
     # )
 
-    gail_trainer.train(10)
+    gail_trainer.train(2048)
 
 if __name__ == "__main__":
     file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
     demonstrations=create_demos(file_path)
-    # train_gail(demonstrations)
+    train_gail(demonstrations)

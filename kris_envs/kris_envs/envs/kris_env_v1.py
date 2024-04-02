@@ -45,6 +45,7 @@ class KrisEnvTuple(gym.Env,Node):
         self.goal_pose_data = np.zeros(shape=(1,7),dtype=np.float32)
         self.odoms_filtered = np.zeros(shape=(1,7),dtype=np.float32)
         self.target_vector = np.zeros(shape=(1,7),dtype=np.float32)
+        self.target_vector_tolerance = 0.01
 
         while self.image_raw_data is None:
             self.get_logger().info("Waiting for camera feed")
@@ -63,12 +64,11 @@ class KrisEnvTuple(gym.Env,Node):
         # GailNavigationNetwork  NaviNet
         # The channel shape are taken from the output of the NaviNet
         # after passing the image through the network
-        # states in the order target vector, rgb_features, depth_features
-        self.observation_space = spaces.Tuple((
-                                        spaces.Box(low=-100.0, high=100.0, shape=(7,), dtype=np.float32),
-                                        spaces.Box(low=-np.inf, high=np.inf, shape=(102400,), dtype=np.float32),
-                                        spaces.Box(low=-np.inf, high=np.inf, shape=(75684,), dtype=np.float32)
-        ))
+        # states in the order target vector, rgb_features, depth_features are fl
+        # flattened and concatenated to form the observation space
+        # Issues https://stable-baselines3.readthedocs.io/en/master/guide/algos.html
+        # 
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(178091,), dtype=np.float32)
 
            
         self.model= NaviNet()
@@ -130,12 +130,13 @@ class KrisEnvTuple(gym.Env,Node):
         self.target_vector = (self.goal_pose_data - self.odoms_filtered).flatten()
         rgb_features=rgb_features.detach().cpu().numpy().flatten()
         depth_features=depth_features.detach().cpu().numpy().flatten()
+
+        flatten_obs=np.concatenate((self.target_vector,rgb_features,depth_features))
         
-        
-        return (self.target_vector,rgb_features,depth_features)
+        return flatten_obs
     
     def _take_action(self,pose):
-        self.sub_goal_pose_pub(pose)
+        self.sub_goal_pose_pub.publish(pose)
    ## COuld also be a service call depending on the robot
         done=True      
         return done
@@ -145,8 +146,8 @@ class KrisEnvTuple(gym.Env,Node):
         return reward
     
     def _is_done(self,observation):
-        target_vector = observation['target_vector']
-        if np.linalg.norm(target_vector) < 0.01:
+        # target_vector = observation['target_vector']
+        if np.linalg.norm(self.target_vector) < self.target_vector_tolerance:
             return True
         else:
             return False
