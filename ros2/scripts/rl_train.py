@@ -8,11 +8,10 @@ from imitation.rewards.reward_nets import BasicRewardNet,CnnRewardNet
 from imitation.util.networks import RunningNorm
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy, CnnPolicy
-from imitation.data.types import Trajectory,DictObs
+from imitation.data.types import Trajectory
 from imitation.data import rollout
 from gymnasium.wrappers import TimeLimit
 from imitation.data.wrappers import RolloutInfoWrapper
-from stable_baselines3.common.vec_env import DummyVecEnv
 import rclpy
 import numpy as np
 import h5py
@@ -129,6 +128,7 @@ def train_gail(rollouts,no_envs=1):
         venv=env,
         gen_algo=learner,
         reward_net=reward_net,
+        allow_variable_horizon=False,
     )
 
     env.seed(SEED)
