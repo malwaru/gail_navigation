@@ -281,9 +281,9 @@ class BagReaderNode(Node):
                 
             if topic=="/framos/depth/image_raw":
                                          
-                depth_data = self.bridge.imgmsg_to_cv2(self.depth_image_raw_data, desired_encoding='16UC1')
+                depth_data = self.bridge.imgmsg_to_cv2(self.depth_image_raw_data, desired_encoding='passthrough')
                 ## The scale of depth pixels is 0.001|  16bit depth, one unit is 1 mm | taken from data sheet 
-                depth_data = np.array(depth_data,dtype=np.uint16)*0.001
+                # depth_data = np.array(depth_data,dtype=np.uint16)*0.001
 
 
                 img_depth_resized=self.img_resize(depth_data,self.image_compression_ratio)
