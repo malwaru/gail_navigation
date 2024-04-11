@@ -2,7 +2,7 @@ from stable_baselines3 import PPO
 import gymnasium as gym
 from imitation.util.util import make_vec_env
 import kris_envs
-from kris_envs.wrappers.trajgen import TrajFromFile,TrajectoryAccumulator
+from kris_envs.wrappers.trajgen import TrajFromFile
 from imitation.algorithms.adversarial.gail import GAIL
 from imitation.rewards.reward_nets import BasicRewardNet,CnnRewardNet
 from imitation.util.networks import RunningNorm
@@ -140,5 +140,7 @@ def train_gail(rollouts,no_envs=1):
 
 if __name__ == "__main__":
     file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
-    demonstrations=create_demos(file_path)
+    # demonstrations=create_demos(file_path)ns
+    traj_generator=TrajFromFile(file_path)
+    batch_size,demonstrations=traj_generator.create_demos()
     train_gail(demonstrations)

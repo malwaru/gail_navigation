@@ -54,8 +54,9 @@ class KrisEnv(gym.Env,Node):
         # gym initializations
         # Defining action space where max subgoal position is 0.5 and 
         # max subgoal orientation is 0.785398 radians
-        action_low = np.concatenate((np.ones(3)*-0.5,np.ones(4)*-0.785398))
-        action_high = np.concatenate((np.ones(3)*0.5,np.ones(4)*0.785398))
+        # But the action space used is normalized to [-1,1]
+        action_low = np.ones(7)*-1.0
+        action_high = np.ones(7)*1.0
         self.action_space = spaces.Box(low=action_low, high=action_high,
                                        shape=(7,) ,dtype=np.float32)
 
@@ -83,7 +84,6 @@ class KrisEnv(gym.Env,Node):
     def image_raw_callback(self, msg):
         self.image_raw_data = cv2.cvtColor(self._cvbridge.imgmsg_to_cv2(msg),
                                            cv2.COLOR_BGR2RGB)
-        # self.get_logger().info(f"[KrisEnv::image_raw_callback]self.image_raw_data.shape{self.image_raw_data.shape}")    
            
                 
     def odometry_filtered_callback(self, msg):
@@ -204,7 +204,7 @@ class KrisEnv(gym.Env,Node):
         return observation, reward, terminated, False, info
     
     def render(self):
-        return NotImplementedError
+        raise NotImplementedError
     
     def close(self):
         '''
@@ -212,5 +212,5 @@ class KrisEnv(gym.Env,Node):
             eg: close the connection to the robot,close windows etc
 
         '''
-        return NotImplementedError
+        raise NotImplementedError
 
