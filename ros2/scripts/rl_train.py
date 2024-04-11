@@ -1,5 +1,5 @@
 from stable_baselines3 import PPO
-import gymnasium as gym
+# import gymnasium as gym
 from imitation.util.util import make_vec_env
 import kris_envs
 from kris_envs.wrappers.trajgen import TrajFromFile
@@ -8,75 +8,15 @@ from imitation.rewards.reward_nets import BasicRewardNet,CnnRewardNet
 from imitation.util.networks import RunningNorm
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy, CnnPolicy
-from imitation.data.types import Trajectory
-from imitation.data import rollout
-from gymnasium.wrappers import TimeLimit
+# from imitation.data.types import Trajectory
+# from imitation.data import rollout
+# from gymnasium.wrappers import TimeLimit
 from imitation.data.wrappers import RolloutInfoWrapper
 import rclpy
 import numpy as np
-import h5py
-from GailNavigationNetwork.model import NaviNet
-from GailNavigationNetwork.utilities import preprocess
-
-
-
-def create_demos(file_path,DEVICE="cuda"):
-    '''
-    Creates a gymnasium transition from the given file path
-    of hdf5 file of known structure
-
-    Args:
-    file_path: str  
-    Path to the hdf5 file   
-
-    Returns:
-    rollouts: gymnasium.Transition
-
-    '''    
-    read_file= h5py.File(file_path, "r")
-    model= NaviNet().to(DEVICE)
-    model.eval()
-    len= read_file['kris_dynamics']['odom_data']['target_vector'].shape[0]
-    rgbs=[]
-    depths=[]
-    targets=[]  
-    acts=[]
-    for i in range(len):
-        target=read_file['kris_dynamics']['odom_data']['target_vector'][i]
-        rgb=read_file['images']['rgb_data'][i]
-        depth=read_file['images']['depth_data'][i]
-        act=read_file['kris_dynamics']['odom_data']['odom_data_wheel'][i]
-        # print(f"depth shape in rollout {depth.shape}")
-        rgb=preprocess(rgb)
-        depth=preprocess(depth)
-        # rgb,depth=preprocess(rgb,depth)
-        (rgb, depth) = (rgb.to(DEVICE), depth.to(DEVICE))
-        rgb_features, depth_features = model(rgb,depth)
-        rgb_features=rgb_features.detach().cpu().numpy()
-        depth_features=depth_features.detach().cpu().numpy()
-        # print(f"targets feature in rollout {target.shape}")
-        rgbs.append(rgb_features.flatten())
-        depths.append(depth_features.flatten())
-        targets.append(target.flatten()) 
-        acts.append(act)
-        
-
-    acts=np.array(acts[:-1])
-    dones=[False for i in range(len)]
-    dones[-1]=True
-    infos= [{} for i in range(len-1)]
-    rgbs=np.array(rgbs)
-    depths=np.array(depths)
-    targets=np.array(targets)
-    # print(f"[rl_train] Creating rollouts {rgbs.shape} {depths.shape} , targets {targets.shape} acts {acts.shape}")
-    # obs_dict=DictObs( {'target_vector': targets,
-    #         'rgb_features':rgbs,
-    #         'depth_features': depths})
-    obs_array=np.concatenate((targets,rgbs,depths),axis=1)
-    print(f"[rl_train] obs array shape {obs_array.shape}")
-    traj = Trajectory(obs=obs_array, acts=acts,infos=infos,terminal=dones)
-
-    return rollout.flatten_trajectories([traj])
+# import h5py
+# from GailNavigationNetwork.model import NaviNet
+# from GailNavigationNetwork.utilities import preprocess
 
 
 
@@ -140,7 +80,6 @@ def train_gail(rollouts,no_envs=1):
 
 if __name__ == "__main__":
     file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
-    # demonstrations=create_demos(file_path)ns
     traj_generator=TrajFromFile(file_path)
     batch_size,demonstrations=traj_generator.create_demos()
     train_gail(demonstrations)

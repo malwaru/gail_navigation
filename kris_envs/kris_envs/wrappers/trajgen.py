@@ -60,7 +60,7 @@ class TrajFromFile:
         depths=np.array(depths)
         targets=np.array(targets)
         obs_array=np.concatenate((targets,rgbs,depths),axis=1)
-        print(f"[rl_train] obs array shape {obs_array.shape}")
+        print(f"[kris_env:trajgen] observation array shape {obs_array.shape}")
         traj = Trajectory(obs=obs_array, acts=acts,infos=infos,terminal=dones)
 
         return batch_size,rollout.flatten_trajectories([traj])

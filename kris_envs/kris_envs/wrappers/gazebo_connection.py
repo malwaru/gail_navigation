@@ -6,7 +6,7 @@ from std_srvs.srv import Empty
 # from gazebo_msgs.msg import ODEPhysics
 from gazebo_msgs.srv import SetPhysicsProperties, SpawnEntity, DeleteEntity
 # from geometry_msgs.msg import Twist,PoseStamped
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose,PoseStamped
 from ament_index_python.packages import get_package_share_directory
 import numpy as np
 import random
@@ -22,6 +22,7 @@ class GazeboConnection(Node):
         self.reset_proxy = self.create_client(Empty, '/reset_simulation')
         self.spawn_model = self.create_client(SpawnEntity, '/spawn_entity')
         self.delete_model = self.create_client(DeleteEntity, '/delete_entity')
+        self.goal_pose_pub = self.create_publisher(PoseStamped,'/goal_pose',10)
 
         # Setup the Gravity Control system
         # service_name = '/gazebo/set_parameters'
@@ -109,6 +110,9 @@ class GazeboConnection(Node):
     def generate_poses(self,max_val=40.0, min_val=-40.0, max_diff=10.0):
         '''
         Generate random origin and goal poses within the given range and max_diff
+        max_val: Maximum x and y value of the terrain available for spawning
+        min_val: Minimum x and y value of the terrain available for spawning
+        max_diff: Maximum distance between current pose and goal poses
         
         '''
         origin_x = np.random.uniform(min_val, max_val)
@@ -243,6 +247,7 @@ class GazeboConnection(Node):
             while rclpy.ok():
                 if srv_call.done():
                     self.get_logger().info('Spawn status: %s' % srv_call.result().status_message)
+                    self.goal_pose_pub.publish(goal)
                     break
                 rclpy.spin_once(self)
             return srv_call.result().success

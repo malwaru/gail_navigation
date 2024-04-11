@@ -43,3 +43,24 @@ def denormalise_action(act_arr,
     act_arr[3:] = (act_arr[3:] + 1) / 2 * (act_ang_rng[1] - act_ang_rng[0]) + act_ang_rng[0]
     
     return act_arr
+
+
+def transform_to_int8(arr,old_max=50.0):
+    """
+    Transform float 32 depth array to unsigned int 8 depth array.
+
+    Args:
+        arr (numpy.ndarray): The 2D array to be remapped.
+        old_max (float): The maximum depth value 
+                        Default max depth is 50.0 meters
+        
+
+    Returns:
+        numpy.ndarray: The remapped 2D array with values as integers.
+    """
+    # Check if any value in the array is infinity and replace it with the maximum value
+    arr = np.where(np.isinf(arr), old_max, arr)
+    arr = arr/ old_max
+    # normalize the data to 0 - 1
+    rescaled_arr = 255 * arr # Now scale by 255
+    return rescaled_arr.astype(np.int8)

@@ -12,7 +12,7 @@ import numpy as np
 import PIL, PIL.Image
 from cv_bridge import CvBridge
 import cv2
-
+from kris_envs.wrappers.utilities import transform_to_int8
 
 class BagReaderNode(Node):
     def __init__(self):
@@ -284,8 +284,7 @@ class BagReaderNode(Node):
                 depth_data = self.bridge.imgmsg_to_cv2(self.depth_image_raw_data, desired_encoding='passthrough')
                 ## The scale of depth pixels is 0.001|  16bit depth, one unit is 1 mm | taken from data sheet 
                 # depth_data = np.array(depth_data,dtype=np.uint16)*0.001
-
-
+                depth_data=transform_to_int8(depth_data)
                 img_depth_resized=self.img_resize(depth_data,self.image_compression_ratio)
 
             # Append the data to the HDF5 dataset

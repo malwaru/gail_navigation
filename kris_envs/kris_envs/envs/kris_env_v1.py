@@ -16,7 +16,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 import time
-from kris_envs.wrappers.utilities import denormalise_action
+from kris_envs.wrappers.utilities import denormalise_action,transform_to_int8
 
 
 class KrisEnvTuple(gym.Env,Node):
@@ -71,8 +71,6 @@ class KrisEnvTuple(gym.Env,Node):
         # flattened and concatenated to form the observation space
         # Issues https://stable-baselines3.readthedocs.io/en/master/guide/algos.html
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(178091,), dtype=np.float32)
-
-           
         self.model= NaviNet()
         self.model.eval()
 
@@ -80,9 +78,9 @@ class KrisEnvTuple(gym.Env,Node):
     def depth_image_raw_callback(self, msg):
         depth_image_raw_data = self._cvbridge.imgmsg_to_cv2(msg, 
                                                 desired_encoding="passthrough")
+        depth_image_raw_data=transform_to_int8(depth_image_raw_data)
         ## The scale of depth pixels is 0.001|  16bit depth, one unit is 1 mm | taken from data sheet 
-        self.depth_image_raw_data = np.array(depth_image_raw_data, 
-                                             dtype=np.uint16)*0.001
+        self.depth_image_raw_data = np.array(depth_image_raw_data)
     
     def image_raw_callback(self, msg):
         self.image_raw_data = cv2.cvtColor(self._cvbridge.imgmsg_to_cv2(msg),
@@ -128,7 +126,6 @@ class KrisEnvTuple(gym.Env,Node):
         depth_image=preprocess(self.depth_image_raw_data)  
         rgb_features, depth_features = self.model(rgb_image,
                                                   depth_image)
-        # self.get_logger().info(f"depth feature shape {depth_features.shape}")
         self.target_vector = (self.goal_pose_data - self.odoms_filtered).flatten()
         rgb_features=rgb_features.detach().cpu().numpy().flatten()
         depth_features=depth_features.detach().cpu().numpy().flatten()
@@ -140,7 +137,7 @@ class KrisEnvTuple(gym.Env,Node):
     def _take_action(self,pose):
         self.sub_goal_pose_pub.publish(pose)
         ## Wait for the actions to be executed completely   
-        # COuld also be a service call depending on the robot
+        # Could also be a service call depending on the robot
         time.sleep(self.observation_delay)
         done=True      
         
@@ -167,9 +164,9 @@ class KrisEnvTuple(gym.Env,Node):
         '''
         Does ROS actions based on the action passed
         '''
-        denorm_action=np.array(action[0].item(),action[1].item(),action[2].item(),
+        denorm_action=np.array([action[0].item(),action[1].item(),action[2].item(),
                                 action[3].item(),action[4].item(),action[5].item(),
-                                action[6].item())
+                                action[6].item()])
         denorm_action=denormalise_action(denorm_action)
      
         sub_goal_pose_msg = PoseStamped()
@@ -222,5 +219,5 @@ class KrisEnvTuple(gym.Env,Node):
             eg: close the connection to the robot,close windows etc
 
         '''
-        raise NotImplementedError
-
+        print("Closing the environment")
+        self.destroy_node()
