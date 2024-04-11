@@ -16,7 +16,8 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 import time
-from kris_envs.wrappers.utilities import denormalise_action,transform_to_int8
+from kris_envs.wrappers.utilities import denormalise_action,transform_to_int8,\
+                                        img_resize
 
 
 class KrisEnvTuple(gym.Env,Node):
@@ -78,13 +79,16 @@ class KrisEnvTuple(gym.Env,Node):
     def depth_image_raw_callback(self, msg):
         depth_image_raw_data = self._cvbridge.imgmsg_to_cv2(msg, 
                                                 desired_encoding="passthrough")
+        depth_image_raw_data=img_resize(depth_image_raw_data,scale=1.0)
         depth_image_raw_data=transform_to_int8(depth_image_raw_data)
         ## The scale of depth pixels is 0.001|  16bit depth, one unit is 1 mm | taken from data sheet 
         self.depth_image_raw_data = np.array(depth_image_raw_data)
     
     def image_raw_callback(self, msg):
-        self.image_raw_data = cv2.cvtColor(self._cvbridge.imgmsg_to_cv2(msg),
+        image_raw_data = cv2.cvtColor(self._cvbridge.imgmsg_to_cv2(msg),
                                            cv2.COLOR_BGR2RGB)
+        image_raw_data=img_resize(image_raw_data,scale=1.0)         
+        self.image_raw_data = np.array(image_raw_data)
         # self.get_logger().info(f"[KrisEnv::image_raw_callback]self.image_raw_data.shape{self.image_raw_data.shape}")    
            
                 

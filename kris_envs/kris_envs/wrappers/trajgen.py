@@ -4,7 +4,8 @@ import numpy as np
 import h5py
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
-from kris_envs.wrappers.utilities import normalise_action
+from kris_envs.wrappers.utilities import normalise_action, transform_to_int8
+
 
 
 class TrajFromFile:
@@ -41,6 +42,8 @@ class TrajFromFile:
             # Normalise action to -1 to 1
             act=normalise_action(act)
             rgb=preprocess(rgb)
+            # Convert depth to int8
+            depth=transform_to_int8(depth)
             depth=preprocess(depth)
             (rgb, depth) = (rgb.to(DEVICE), depth.to(DEVICE))
             rgb_features, depth_features = model(rgb,depth)

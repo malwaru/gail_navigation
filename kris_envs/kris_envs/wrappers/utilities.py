@@ -1,5 +1,5 @@
 import numpy as np
-
+import cv2
 
 def normalise_action(act_arr,
                      act_lin_rng=[-1,1],
@@ -64,3 +64,18 @@ def transform_to_int8(arr,old_max=50.0):
     # normalize the data to 0 - 1
     rescaled_arr = 255 * arr # Now scale by 255
     return rescaled_arr.astype(np.int8)
+
+def img_resize(img,scale=1.0):
+        '''
+        Resize the image to the given scale
+
+        Args:
+            img:   (np.array)
+                    The image to be resized
+            scale: (float)
+                    The scale to resize the image to
+        Returns:
+            The resized image (np.array)
+        
+        '''
+        return cv2.resize(img, (int(img.shape[1]*scale), int(img.shape[0]*scale)), interpolation=cv2.INTER_AREA)

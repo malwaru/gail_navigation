@@ -12,7 +12,7 @@ import numpy as np
 import PIL, PIL.Image
 from cv_bridge import CvBridge
 import cv2
-from kris_envs.wrappers.utilities import transform_to_int8
+from kris_envs.wrappers.utilities import img_resize
 
 class BagReaderNode(Node):
     def __init__(self):
@@ -148,11 +148,12 @@ class BagReaderNode(Node):
         self.depth_camera_info_data = msg
 
     def depth_image_raw_callback(self, msg):
-        self.depth_image_raw_data = msg
+        self.depth_image_raw_data = self.bridge.imgmsg_to_cv2(msg, 
+                                                desired_encoding='passthrough')
 
     def image_raw_callback(self, msg):
-        self.image_raw_data = msg
-
+        self.image_raw_data = self.bridge.imgmsg_to_cv2(msg,
+                                                desired_encoding='passthrough')
     def goal_pose_callback(self, msg):
         '''
         This function is called when the goal pose is available
@@ -245,21 +246,7 @@ class BagReaderNode(Node):
             return np.array(PIL.Image.open(io.BytesIO(arrs)))
         else:
             raise ValueError
-        
-    def img_resize(self,img,scale):
-        '''
-        Resize the image to the given scale
 
-        Args:
-            img:   (np.array)
-                    The image to be resized
-            scale: (float)
-                    The scale to resize the image to
-        Returns:
-            The resized image (np.array)
-        
-        '''
-        return cv2.resize(img, (int(img.shape[1]*scale), int(img.shape[0]*scale)), interpolation=cv2.INTER_AREA)
 
     def read_bag_data(self):
         '''
@@ -269,10 +256,9 @@ class BagReaderNode(Node):
 
         for topic in self.topics_list:
             if topic == '/framos/image_raw':
-                # Convert ROS Image to NumPy array
-                rgb_data = self.bridge.imgmsg_to_cv2(self.image_raw_data, desired_encoding='passthrough')
-                rgb_data=cv2.cvtColor(rgb_data, cv2.COLOR_BGR2RGB)
-                img_resized=self.img_resize(rgb_data,self.image_compression_ratio)
+                # Convert image to numpy channel format               
+                rgb_data=cv2.cvtColor(self.image_raw_data, cv2.COLOR_BGR2RGB)
+                img_resized=img_resize(rgb_data,self.image_compression_ratio)
                 # rgb_encoded = self.im2bytes(img_resized)
 
                 # Append the data to the HDF5 dataset
@@ -280,12 +266,12 @@ class BagReaderNode(Node):
                 self.rgb_dataset[-1] = img_resized
                 
             if topic=="/framos/depth/image_raw":
-                                         
-                depth_data = self.bridge.imgmsg_to_cv2(self.depth_image_raw_data, desired_encoding='passthrough')
+                # The depth values are in metres
+                # We do not convert the depth values to uint8                                         
+                depth_data = self.depth_image_raw_data
                 ## The scale of depth pixels is 0.001|  16bit depth, one unit is 1 mm | taken from data sheet 
-                # depth_data = np.array(depth_data,dtype=np.uint16)*0.001
-                depth_data=transform_to_int8(depth_data)
-                img_depth_resized=self.img_resize(depth_data,self.image_compression_ratio)
+                # depth_data = np.array(depth_data,dtype=np.uint16)*0.001           
+                img_depth_resized=img_resize(depth_data,self.image_compression_ratio)
 
             # Append the data to the HDF5 dataset
                 self.depth_dataset.resize(self.depth_dataset.shape[0] + 1, axis=0)
