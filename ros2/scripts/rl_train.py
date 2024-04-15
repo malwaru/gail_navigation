@@ -45,11 +45,11 @@ def train_gail(rollouts,no_envs=1):
     learner = PPO(
         env=env,
         policy=MlpPolicy,
-        batch_size=64,
-        ent_coef=0.0,
+        batch_size=64, # Mini batch size
+        ent_coef=0.0,  # Entropy coefficient for the loss calculation
         learning_rate=0.0004,
-        gamma=0.95,
-        n_epochs=5,
+        gamma=0.95, # Discount factor
+        n_epochs=5, # Number of epochs when optimizing the surrogate objective
         seed=SEED,
     )
     print(f"[rl_train] Defining rewardnet")
@@ -62,9 +62,9 @@ def train_gail(rollouts,no_envs=1):
     print(f"[rl_train] venv obs shape {env.observation_space}")
     gail_trainer = GAIL(
         demonstrations=rollouts,
-        demo_batch_size=24,
-        gen_replay_buffer_capacity=512,
-        n_disc_updates_per_round=8,
+        demo_batch_size=24, # Batch size of expert demonstrations
+        gen_replay_buffer_capacity=512, # Capacity of the replay buffer number of obs-action-obs samples from the generator that can be stored)
+        n_disc_updates_per_round=8, # Number of discriminator updates per round of training
         venv=env,
         gen_algo=learner,
         reward_net=reward_net,
