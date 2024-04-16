@@ -65,8 +65,7 @@ class TestSpawn(Node):
         # self.get_logger().info(f'Enable button command {self.enable_btn}')
         if self.enable_btns[0]==1:
             self.get_logger().info('Publishing subgoal pose')
-            self.publisher_subgoal_pose.publish(pose_stamped)
-                                
+            self.publisher_subgoal_pose.publish(pose_stamped)                                
         elif self.enable_btns[1]==1:
             self.get_logger().info('Resetting simulation')
             self.gazebo.reset_sim()               

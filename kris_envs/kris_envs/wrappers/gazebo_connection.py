@@ -34,7 +34,7 @@ class GazeboConnection(Node):
 
         ## Parameters for robot spawn
 
-        self.timeout = 1.0
+        self.timeout = 30.0
         self.entity='kris'
         self.package_name = 'kris_description'
         self.pkg_share = get_package_share_directory(self.package_name)
@@ -106,8 +106,34 @@ class GazeboConnection(Node):
     #     # self.update_gravity_call()
     #     pass
 
+    def _spawn_entity(self, entity_xml, initial_pose, timeout):
+        if timeout < 0:
+            self.get_logger().error('spawn_entity timeout must be greater than zero')
+            return False
+        self.get_logger().info(
+            'Waiting for service /spawn_entity, timeout = %.f' % timeout)
+        self.get_logger().info('Waiting for service /spawn_entity')
+        # client = self.create_client(SpawnEntity, '/spawn_entity')
+        if self.spawn_model.wait_for_service(timeout_sec=timeout):
+            req = SpawnEntity.Request()
+            req.name = self.entity
+            req.xml = str(entity_xml, 'utf-8')
+            req.robot_namespace = ''
+            req.initial_pose = initial_pose
+            req.reference_frame = ''
+            self.get_logger().info('Calling service /spawn_entity')
+            srv_call = self.spawn_model.call_async(req)
+            while rclpy.ok():
+                if srv_call.done():
+                    self.get_logger().info('Spawn status: %s' % srv_call.result().status_message)
+                    break
+                rclpy.spin_once(self)
+            return srv_call.result().success
+        self.get_logger().error(
+            'Service %s/spawn_entity unavailable. Was Gazebo started with GazeboRosFactory?')
+        return False
 
-    def generate_poses(self,max_val=40.0, min_val=-40.0, max_diff=10.0):
+    def generate_poses(self,max_val=20.0, min_val=-20.0, max_diff=10.0):
         '''
         Generate random origin and goal poses within the given range and max_diff
         max_val: Maximum x and y value of the terrain available for spawning
@@ -137,7 +163,7 @@ class GazeboConnection(Node):
         origin_pose = Pose()
         origin_pose.position.x = origin_x
         origin_pose.position.y = origin_y
-        origin_pose.position.z = 0.2        
+        origin_pose.position.z = 0.8      
         origin_pose.orientation.x = origin_yaw[0]
         origin_pose.orientation.y = origin_yaw[1]
         origin_pose.orientation.z = origin_yaw[2]
@@ -146,7 +172,7 @@ class GazeboConnection(Node):
         goal_pose = PoseStamped()
         goal_pose.pose.position.x = goal_x
         goal_pose.pose.position.y = goal_y
-        goal_pose.pose.position.z = 0.2        
+        goal_pose.pose.position.z = 0.8   
         goal_pose.pose.orientation.x = goal_yaw[0]
         goal_pose.pose.orientation.y = goal_yaw[1]
         goal_pose.pose.orientation.z = goal_yaw[2]
@@ -173,10 +199,7 @@ class GazeboConnection(Node):
         return (origin_pose, goal_pose)
 
 
-    # # Example usage:
-    # origin, goal = generate_poses(max_val=50.0, min_val=-50.0, max_diff=10)
-    # print("Origin Pose:", origin)
-    # print("Goal Pose:", goal)
+
 
 
 
@@ -247,7 +270,7 @@ class GazeboConnection(Node):
         #     self.get_logger().error("/gazebo/spawn entity service call failed")
         # print(f"[gazebo_connection] Before gen pose")
 
-        origin, goal = self.generate_poses(max_val=40.0, min_val=-40.0, max_diff=10.0)
+        origin, goal = self.generate_poses(max_val=20.0, min_val=-20.0, max_diff=10.0)
         # print(f"[gazebo_connection] After gen pose")
 
         # f = open(self.urdf, 'r')
@@ -284,25 +307,16 @@ class GazeboConnection(Node):
 
         # Encode xml object back into string for service call
         entity_xml = ElementTree.tostring(xml_parsed)
-        if self.spawn_model.wait_for_service(timeout_sec=self.timeout):
-            req = SpawnEntity.Request()
-            req.name = self.entity
-            req.xml =  str(entity_xml, 'utf-8')
-            # req.robot_namespace = self.args.robot_namespace
-            req.initial_pose = origin
-            # req.reference_frame = self.args.reference_frame
-            self.get_logger().info('Calling service %s/spawn_entity')
-            srv_call = self.spawn_model.call_async(req)
-            while rclpy.ok():
-                if srv_call.done():
-                    self.get_logger().info('Spawn status: %s' % srv_call.result().status_message)
-                    self.goal_pose_pub.publish(goal)
-                    break
-                rclpy.spin_once(self)
-            return srv_call.result().success
-        self.get_logger().error(
-            'Service %s/spawn_entity unavailable. Was Gazebo started with GazeboRosFactory?')
-        # return False
+        success=self._spawn_entity(entity_xml, origin,self.timeout)
+
+        if success:
+            
+            self.goal_pose_pub.publish(goal)
+            return 0
+        else:
+            self.get_logger().error('Spawn service failed. Exiting.')
+            return 1
+
 
     
     def quaternion_from_euler(self,roll, pitch, yaw):
