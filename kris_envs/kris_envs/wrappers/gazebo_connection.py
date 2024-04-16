@@ -3,13 +3,13 @@ import os
 import rclpy
 from rclpy.node import Node
 from std_srvs.srv import Empty
-# from gazebo_msgs.msg import ODEPhysics
 from gazebo_msgs.srv import SetPhysicsProperties, SpawnEntity, DeleteEntity
-# from geometry_msgs.msg import Twist,PoseStamped
 from geometry_msgs.msg import Pose,PoseStamped
 from ament_index_python.packages import get_package_share_directory
 import numpy as np
 import random
+from xml.etree import ElementTree
+
 
 
 class GazeboConnection(Node):
@@ -143,16 +143,31 @@ class GazeboConnection(Node):
         origin_pose.orientation.z = origin_yaw[2]
         origin_pose.orientation.w = origin_yaw[3]
 
-        goal_pose = Pose()
-        goal_pose.position.x = goal_x
-        goal_pose.position.y = goal_y
-        goal_pose.position.z = 0.2        
-        goal_pose.orientation.x = goal_yaw[0]
-        goal_pose.orientation.y = goal_yaw[1]
-        goal_pose.orientation.z = goal_yaw[2]
-        goal_pose.orientation.w = goal_yaw[3]
+        goal_pose = PoseStamped()
+        goal_pose.pose.position.x = goal_x
+        goal_pose.pose.position.y = goal_y
+        goal_pose.pose.position.z = 0.2        
+        goal_pose.pose.orientation.x = goal_yaw[0]
+        goal_pose.pose.orientation.y = goal_yaw[1]
+        goal_pose.pose.orientation.z = goal_yaw[2]
+        goal_pose.pose.orientation.w = goal_yaw[3]
 
-        print(f"[gazebo_connection]  Origin Pose: {origin_pose.shape} Goal Pose: {goal_pose.shape}")
+        print(f"[gazebo_connection] Respawn Pose: \n \
+              position \nx:{origin_pose.position.x} \
+                \ny:{origin_pose.position.y} \
+                \nz:{origin_pose.position.z} \
+                \n orintation: \nx{origin_pose.orientation.x} \
+                \ny:{origin_pose.orientation.y} \
+                \nz:{origin_pose.orientation.z} \
+                \nw:{origin_pose.orientation.w} \
+               \n\n Goal Pose:  \
+               \n position \nx:{goal_pose.pose.position.x} \
+                \ny:{goal_pose.pose.position.y} \
+                \nz:{goal_pose.pose.position.z} \
+                \n orintation: \nx{goal_pose.pose.orientation.x} \
+                \ny:{goal_pose.pose.orientation.y} \
+                \nz:{goal_pose.pose.orientation.z} \
+                \nw:{goal_pose.pose.orientation.w}")
 
 
         return (origin_pose, goal_pose)
@@ -197,14 +212,14 @@ class GazeboConnection(Node):
 
         # Delete entity from gazebo on shutdown if bond flag enabled
         self.get_logger().info(f'Deleting entity {self.entity} ')
-        client = self.create_client(
-            DeleteEntity, '/delete_entity')
-        if client.wait_for_service(timeout_sec=self.timeout):
+        # client = self.create_client(
+        #     DeleteEntity, '/delete_entity')
+        if self.delete_model.wait_for_service(timeout_sec=self.timeout):
             req = DeleteEntity.Request()
             req.name = self.entity
             self.get_logger().info(
                 'Calling service delete_entity')
-            srv_call = client.call_async(req)
+            srv_call = self.delete_model.call_async(req)
             while rclpy.ok():
                 if srv_call.done():
                     self.get_logger().info(
@@ -230,20 +245,54 @@ class GazeboConnection(Node):
         #     self.get_logger().info("/gazebo/spawn entity service call successful")
         # else:
         #     self.get_logger().error("/gazebo/spawn entity service call failed")
+        # print(f"[gazebo_connection] Before gen pose")
 
         origin, goal = self.generate_poses(max_val=40.0, min_val=-40.0, max_diff=10.0)
-        f = open(self.urdf, 'r')
-        entity_xml = f.read()
-        client = self.create_client(SpawnEntity,'/spawn_entity')
-        if client.wait_for_service(timeout_sec=self.timeout):
+        # print(f"[gazebo_connection] After gen pose")
+
+        # f = open(self.urdf, 'r')
+        # entity_xml = f.read()
+        # entity_xml=self.urdf\
+
+        self.get_logger().info('Loading entity XML from file %s' % self.urdf)
+        if not os.path.exists(self.urdf):
+            self.get_logger().error('Error: specified file %s does not exist', self.urdf)
+            return 1
+        if not os.path.isfile(self.urdf):
+            self.get_logger().error('Error: specified file %s is not a file', self.urdf)
+            return 1
+        # load file
+        try:
+            f = open(self.urdf, 'r')
+            entity_xml = f.read()
+        except IOError as e:
+            self.get_logger().error('Error reading file {}: {}'.format(self.urdf, e))
+            return 1
+        if entity_xml == '':
+            self.get_logger().error('Error: file %s is empty', self.urdf)
+            return 1
+        print(f"[gazebo_connection] After read     pose")
+        # client = self.create_client(SpawnEntity,'/spawn_entity')
+                # Parse xml to detect invalid xml before sending to gazebo
+        try:
+            xml_parsed = ElementTree.fromstring(entity_xml)
+        except ElementTree.ParseError as e:
+            self.get_logger().error('Invalid XML: {}'.format(e))
+            return 1
+
+        # print(f"[gazebo_connection] Entity XML: {entity_xml}")
+
+        # Encode xml object back into string for service call
+        entity_xml = ElementTree.tostring(xml_parsed)
+        if self.spawn_model.wait_for_service(timeout_sec=self.timeout):
             req = SpawnEntity.Request()
             req.name = self.entity
-            req.xml = str(entity_xml, 'utf-8')
+            req.xml =  str(entity_xml, 'utf-8')
             # req.robot_namespace = self.args.robot_namespace
             req.initial_pose = origin
             # req.reference_frame = self.args.reference_frame
             self.get_logger().info('Calling service %s/spawn_entity')
-            srv_call = client.call_async(req)
+            srv_call = self.spawn_model.call_async(req)
             while rclpy.ok():
                 if srv_call.done():
                     self.get_logger().info('Spawn status: %s' % srv_call.result().status_message)
@@ -253,7 +302,7 @@ class GazeboConnection(Node):
             return srv_call.result().success
         self.get_logger().error(
             'Service %s/spawn_entity unavailable. Was Gazebo started with GazeboRosFactory?')
-        return False
+        # return False
 
     
     def quaternion_from_euler(self,roll, pitch, yaw):

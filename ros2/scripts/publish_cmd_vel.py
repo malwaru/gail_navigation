@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import  Joy
-from geometry_msgs.msg import Twist,PointStamped
+from geometry_msgs.msg import Twist,PoseStamped
 from rclpy.logging import LoggingSeverity
 import numpy as np
 
@@ -10,7 +10,7 @@ class CmdVelPublisher(Node):
     def __init__(self) -> None:
         super().__init__('tracked_command_publisher')
         self.subscriber_subgoal_pose = self.create_subscription(
-                                                PointStamped,
+                                                PoseStamped,
                                                 '/subgoal_pose',
                                                 self.subgoal_pose_callback,
                                                 10)
@@ -58,10 +58,10 @@ class CmdVelPublisher(Node):
         None
         '''
 
-        dx=pose_stamped.point.x
+        dx=pose_stamped.pose.position.x
         #This isssue need to be fixed right now by trial an error i found the mid point 
         # in the camera frame has a value of 0.38 
-        dy=pose_stamped.point.y
+        dy=pose_stamped.pose.position.y
      
         error_linear=dx
         self.error_total_linear+=error_linear
