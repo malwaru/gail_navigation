@@ -1,0 +1,5 @@
+gail_navigation:
+  gail_navigation:
+    ros__parameters:
+      learning_rate: 1.0
+    

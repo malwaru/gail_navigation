@@ -13,6 +13,10 @@ from xml.etree import ElementTree
 
 
 class GazeboConnection(Node):
+    '''
+    The class that connect the gym environment to the gazebo simulation    
+    
+    '''
 
     def __init__(self):
         super().__init__('gazebo_connection_node')
@@ -56,6 +60,9 @@ class GazeboConnection(Node):
             self.get_logger().error("/gazebo/pause_physics service call failed")
 
     def unpause_sim(self):
+        '''
+        Unpause the simulation
+        '''
         request = Empty.Request()
         future = self.unpause.call_async(request)
         rclpy.spin_until_future_complete(self, future)
@@ -65,6 +72,10 @@ class GazeboConnection(Node):
             self.get_logger().error("/gazebo/unpause_physics service call failed")
 
     def reset_sim(self):
+        '''
+        Reset the simualtion
+        
+        '''
         request = Empty.Request()
         future = self.reset_proxy.call_async(request)
         rclpy.spin_until_future_complete(self, future)
@@ -74,37 +85,38 @@ class GazeboConnection(Node):
             self.get_logger().error("/gazebo/reset_simulation service call failed")
 
     def reset_world(self):
-        self.reset_sim()  # Assuming reset_world is equivalent to reset_simulation in ROS2
-        # ros2 service call /delete_entity gazebo_msgs/srv/DeleteEntity '{name : kris}'
-        # ros2 service call /spawn_entity gazebo_msgs/srv/SpawnEntity '{name : kris, xml : /robot_description , initial_pose : {position : {x : 10.0}}}'
+        '''
+        Reset the simulation and spawn the robot again        
+        '''
+        self.reset_sim()  
         self.delete_entity()
         self.spawn_robot()
 
-    # def init_values(self):
-    #     # self.reset_sim()
+    def init_values(self):
+        # self.reset_sim()
 
-    #     # self._time_step = Float64(data=0.001)
-    #     # self._max_update_rate = Float64(data=1000.0)
+        # self._time_step = Float64(data=0.001)
+        # self._max_update_rate = Float64(data=1000.0)
 
-    #     # self._gravity = Vector3()
-    #     # self._gravity.x = 0.0
-    #     # self._gravity.y = 0.0
-    #     # self._gravity.z = 0.0
+        # self._gravity = Vector3()
+        # self._gravity.x = 0.0
+        # self._gravity.y = 0.0
+        # self._gravity.z = 0.0
 
-    #     # self._ode_config = ODEPhysics()
-    #     # self._ode_config.auto_disable_bodies = False
-    #     # self._ode_config.sor_pgs_precon_iters = 0
-    #     # self._ode_config.sor_pgs_iters = 50
-    #     # self._ode_config.sor_pgs_w = 1.3
-    #     # self._ode_config.sor_pgs_rms_error_tol = 0.0
-    #     # self._ode_config.contact_surface_layer = 0.001
-    #     # self._ode_config.contact_max_correcting_vel = 0.0
-    #     # self._ode_config.cfm = 0.0
-    #     # self._ode_config.erp = 0.2
-    #     # self._ode_config.max_contacts = 20
+        # self._ode_config = ODEPhysics()
+        # self._ode_config.auto_disable_bodies = False
+        # self._ode_config.sor_pgs_precon_iters = 0
+        # self._ode_config.sor_pgs_iters = 50
+        # self._ode_config.sor_pgs_w = 1.3
+        # self._ode_config.sor_pgs_rms_error_tol = 0.0
+        # self._ode_config.contact_surface_layer = 0.001
+        # self._ode_config.contact_max_correcting_vel = 0.0
+        # self._ode_config.cfm = 0.0
+        # self._ode_config.erp = 0.2
+        # self._ode_config.max_contacts = 20
 
-    #     # self.update_gravity_call()
-    #     pass
+        # self.update_gravity_call()
+        return NotImplementedError
 
     def _spawn_entity(self, entity_xml, initial_pose, timeout):
         if timeout < 0:
@@ -163,7 +175,7 @@ class GazeboConnection(Node):
         origin_pose = Pose()
         origin_pose.position.x = origin_x
         origin_pose.position.y = origin_y
-        origin_pose.position.z = 0.8      
+        origin_pose.position.z = 6.0      
         origin_pose.orientation.x = origin_yaw[0]
         origin_pose.orientation.y = origin_yaw[1]
         origin_pose.orientation.z = origin_yaw[2]
@@ -232,11 +244,12 @@ class GazeboConnection(Node):
         # self.update_gravity_call()
         return NotImplementedError
     def delete_entity(self):
+        '''
+        Delete the spawned entity from gazebo
+        '''
 
         # Delete entity from gazebo on shutdown if bond flag enabled
-        self.get_logger().info(f'Deleting entity {self.entity} ')
-        # client = self.create_client(
-        #     DeleteEntity, '/delete_entity')
+        self.get_logger().info(f'Deleting entity {self.entity} ') 
         if self.delete_model.wait_for_service(timeout_sec=self.timeout):
             req = DeleteEntity.Request()
             req.name = self.entity
@@ -256,27 +269,12 @@ class GazeboConnection(Node):
 
     
     def spawn_robot(self):
-        # pkg_share = FindPackageShare('kris_description').find('kris_description')
-        # urdf_dir=os.path.join(pkg_share, 'urdf')
-        # urdf = os.path.join(urdf_dir, 'KRIS.urdf')          
-        # with open(urdf, 'r') as infp:
-        #     robot_desc = infp.read()
-        # request = SpawnEntity.Request(urdf=robot_desc, name='kris', initial_pose=None)
-        # future = self.pause.call_async(request)
-        # rclpy.spin_until_future_complete(self, future)
-        # if future.result() is not None:
-        #     self.get_logger().info("/gazebo/spawn entity service call successful")
-        # else:
-        #     self.get_logger().error("/gazebo/spawn entity service call failed")
-        # print(f"[gazebo_connection] Before gen pose")
+        '''
+        Spawn the robot in the gazebo environment
+        '''
+
 
         origin, goal = self.generate_poses(max_val=20.0, min_val=-20.0, max_diff=10.0)
-        # print(f"[gazebo_connection] After gen pose")
-
-        # f = open(self.urdf, 'r')
-        # entity_xml = f.read()
-        # entity_xml=self.urdf\
-
         self.get_logger().info('Loading entity XML from file %s' % self.urdf)
         if not os.path.exists(self.urdf):
             self.get_logger().error('Error: specified file %s does not exist', self.urdf)
@@ -295,15 +293,13 @@ class GazeboConnection(Node):
             self.get_logger().error('Error: file %s is empty', self.urdf)
             return 1
         print(f"[gazebo_connection] After read     pose")
-        # client = self.create_client(SpawnEntity,'/spawn_entity')
-                # Parse xml to detect invalid xml before sending to gazebo
+    
         try:
             xml_parsed = ElementTree.fromstring(entity_xml)
         except ElementTree.ParseError as e:
             self.get_logger().error('Invalid XML: {}'.format(e))
             return 1
 
-        # print(f"[gazebo_connection] Entity XML: {entity_xml}")
 
         # Encode xml object back into string for service call
         entity_xml = ElementTree.tostring(xml_parsed)
@@ -320,6 +316,9 @@ class GazeboConnection(Node):
 
     
     def quaternion_from_euler(self,roll, pitch, yaw):
+        '''
+        Function to convert euler angles to quaternion
+        '''
         cy = np.cos(yaw * 0.5)
         sy = np.sin(yaw * 0.5)
         cp = np.cos(pitch * 0.5)
