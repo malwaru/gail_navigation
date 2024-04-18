@@ -47,7 +47,7 @@ class KrisEnvTuple(gym.Env,Node):
         self.goal_pose_data = np.zeros(shape=(1,7),dtype=np.float32)
         self.odoms_filtered = np.zeros(shape=(1,7),dtype=np.float32)
         self.target_vector = np.zeros(shape=(1,7),dtype=np.float32)
-        self.target_vector_tolerance = 0.01
+        self.target_vector_tolerance = 1.0 # meters
         self.observation_delay=2.0 # seconds to wait for the observation to be ready
 
         while self.image_raw_data is None:
@@ -63,6 +63,7 @@ class KrisEnvTuple(gym.Env,Node):
         action_high = np.ones(7)*1.0
         self.action_space = spaces.Box(low=action_low, high=action_high,
                                        shape=(7,) ,dtype=np.float32)
+        
 
         # Defining observation space which is the output from 
         # GailNavigationNetwork  NaviNet
@@ -142,7 +143,7 @@ class KrisEnvTuple(gym.Env,Node):
         self.sub_goal_pose_pub.publish(pose)
         ## Wait for the actions to be executed completely   
         # Could also be a service call depending on the robot
-        time.sleep(self.observation_delay)
+        # time.sleep(self.observation_delay)
         done=True      
         
         return done
