@@ -192,7 +192,7 @@ class KrisEnvTuple(gym.Env,Node):
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset()
-        # self.gazebo.reset_sim()
+        # self.gazebo.reset_world()
 
         new_obs = self._get_obs()
 
