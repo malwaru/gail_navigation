@@ -9,6 +9,7 @@ from ament_index_python.packages import get_package_share_directory
 import numpy as np
 import random
 from xml.etree import ElementTree
+from rclpy.logging import LoggingSeverity
 
 
 
@@ -27,6 +28,9 @@ class GazeboConnection(Node):
         self.spawn_model = self.create_client(SpawnEntity, '/spawn_entity')
         self.delete_model = self.create_client(DeleteEntity, '/delete_entity')
         self.goal_pose_pub = self.create_publisher(PoseStamped,'/goal_pose',10)
+        self.publisher_subgoal_pose = self.create_publisher(PoseStamped,
+                                                '/subgoal_pose',                                                
+                                                10)
 
         # Setup the Gravity Control system
         # service_name = '/gazebo/set_parameters'
@@ -334,12 +338,16 @@ class GazeboConnection(Node):
 
         return q
 
-def main(args=None):
-    rclpy.init(args=args)
-    gazebo_connection = GazeboConnection()
-    rclpy.spin(gazebo_connection)
-    gazebo_connection.destroy_node()
-    rclpy.shutdown()
+# def main(args=None):
+#     rclpy.logging._root_logger.log(
+#         'Starting gazebo connection node ...',
+#         LoggingSeverity.INFO
+#     )
+#     rclpy.init(args=args)
+#     gazebo_connection = GazeboConnection()
+#     rclpy.spin(gazebo_connection)
+#     gazebo_connection.destroy_node()
+#     rclpy.shutdown()
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()

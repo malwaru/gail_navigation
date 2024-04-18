@@ -11,19 +11,19 @@ import numpy as np
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
 # from stable_baselines3.common.env_checker import check_env
-from gail_navigation.gazebo_connection import GazeboConnection
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 import time
 from kris_envs.wrappers.utilities import denormalise_action,transform_to_int8,\
                                         img_resize
+from kris_envs.wrappers.gazebo_connection import GazeboConnection
+
 
 
 class KrisEnvTuple(gym.Env,Node):
     def __init__(self):
         super(KrisEnvTuple,self).__init__('kris_env_node')
-
         #ROS initializations
         self.image_dim=(240,320)          
         self.depth_image_raw_sub = self.create_subscription(
@@ -54,7 +54,7 @@ class KrisEnvTuple(gym.Env,Node):
             self.get_logger().info("Waiting for camera feed")
             rclpy.spin_once(self)
 
-
+        self.get_logger().info("Camera feed received")
         # gym initializations
         # Defining action space where max subgoal position is 0.5 and 
         # max subgoal orientation is 0.785398 radians
@@ -192,7 +192,7 @@ class KrisEnvTuple(gym.Env,Node):
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset()
-        self.gazebo.reset_sim()
+        # self.gazebo.reset_sim()
 
         new_obs = self._get_obs()
 

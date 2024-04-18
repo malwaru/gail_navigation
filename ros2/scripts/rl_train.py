@@ -58,8 +58,6 @@ def train_gail(rollouts,no_envs=1):
         action_space=env.action_space,
         normalize_input_layer=RunningNorm,
     )
-    print(f"[rl_train] Entering GAIL training loop ")
-    print(f"[rl_train] venv obs shape {env.observation_space}")
     gail_trainer = GAIL(
         demonstrations=rollouts,
         demo_batch_size=24, # Batch size of expert demonstrations
@@ -75,7 +73,7 @@ def train_gail(rollouts,no_envs=1):
     # learner_rewards_before_training, _ = evaluate_policy(
     #     learner, env, 100, return_episode_rewards=True
     # )
-
+    print(f"[rl_train] Entering GAIL training  ")
     gail_trainer.train(2048)
 
 if __name__ == "__main__":

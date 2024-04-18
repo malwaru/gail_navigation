@@ -11,10 +11,11 @@ import numpy as np
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
 # from stable_baselines3.common.env_checker import check_env
-from gail_navigation.gazebo_connection import GazeboConnection
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
+from kris_envs.wrappers.gazebo_connection import GazeboConnection
+
 
 
 

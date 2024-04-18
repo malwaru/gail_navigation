@@ -1,0 +1,11 @@
+numpy==1.24.4
+opencv-python==4.9.0.80
+torch==2.2.0  
+torchvision==0.17.0 
+torchaudio==2.2.0 
+stable-baselines3==2.2.1
+gymnasium==0.29.1 
+imitation==1.0.0
+h5py==3.10.0
+
+

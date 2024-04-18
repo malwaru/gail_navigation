@@ -5,7 +5,6 @@ from sensor_msgs.msg import  Joy
 from geometry_msgs.msg import Twist,PoseStamped
 from rclpy.logging import LoggingSeverity
 import numpy as np
-# from gail_navigation.gazebo_connection import GazeboConnection
 from kris_envs.wrappers.gazebo_connection import GazeboConnection
 
 class TestSpawn(Node):
@@ -47,7 +46,6 @@ class TestSpawn(Node):
         '''
         self.enable_btns=[msg.buttons[0],msg.buttons[1],msg.buttons[2],msg.buttons[3],msg.buttons[4]]
         self.publish_action(self.pose_stamped)
-        # self.get_logger().info(f'Received enable button command {self.enable_btns}')
 
     def publish_action(self,pose_stamped):
         '''
