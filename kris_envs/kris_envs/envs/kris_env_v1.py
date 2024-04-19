@@ -37,7 +37,7 @@ class KrisEnvTuple(gym.Env,Node):
         self.camera_info_sub = self.create_subscription(
             CameraInfo, '/framos/camera_info', self.camera_info_callback, 10)        
         self.sub_goal_pose_pub = self.create_publisher(
-            PoseStamped,'/sub_goal_pose', 10)
+            PoseStamped,'/subgoal_pose', 10)
         
         self._cvbridge = CvBridge()
         self.gazebo = GazeboConnection()
@@ -143,7 +143,7 @@ class KrisEnvTuple(gym.Env,Node):
         self.sub_goal_pose_pub.publish(pose)
         ## Wait for the actions to be executed completely   
         # Could also be a service call depending on the robot
-        # time.sleep(self.observation_delay)
+        time.sleep(self.observation_delay)
         done=True      
         
         return done
@@ -175,6 +175,7 @@ class KrisEnvTuple(gym.Env,Node):
         denorm_action=denormalise_action(denorm_action)
      
         sub_goal_pose_msg = PoseStamped()
+        sub_goal_pose_msg.header.frame_id = 'base_link'
         sub_goal_pose_msg.pose.position.x = denorm_action[0]
         sub_goal_pose_msg.pose.position.y = denorm_action[1]
         sub_goal_pose_msg.pose.position.z = denorm_action[2]
@@ -225,4 +226,4 @@ class KrisEnvTuple(gym.Env,Node):
 
         '''
         print("Closing the environment")
-        self.destroy_node()
+        # self.destroy_node()

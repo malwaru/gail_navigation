@@ -28,9 +28,7 @@ class GazeboConnection(Node):
         self.spawn_model = self.create_client(SpawnEntity, '/spawn_entity')
         self.delete_model = self.create_client(DeleteEntity, '/delete_entity')
         self.goal_pose_pub = self.create_publisher(PoseStamped,'/goal_pose',10)
-        self.publisher_subgoal_pose = self.create_publisher(PoseStamped,
-                                                '/subgoal_pose',                                                
-                                                10)
+   
 
         # Setup the Gravity Control system
         # service_name = '/gazebo/set_parameters'
