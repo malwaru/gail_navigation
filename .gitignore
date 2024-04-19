@@ -1,6 +1,8 @@
 # PyBuilder
 target/
 *.egg-info/
+*.egg-info/*
+
 
 # Jupyter Notebook
 .ipynb_checkpoints

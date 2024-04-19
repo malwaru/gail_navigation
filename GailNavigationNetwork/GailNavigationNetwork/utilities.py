@@ -47,7 +47,7 @@ def preprocess(image):
         image =  np.expand_dims(image, axis=0)
         image =  torch.from_numpy(image)
         depth_transform = v2.Compose([                      
-                        v2.ToDtype(torch.float32, scale=True),
+                        v2.ToDtype(torch.float32),
                         v2.Normalize(mean=[0.485], std=[0.229]),
                     ])
         image = depth_transform(image)
@@ -56,7 +56,7 @@ def preprocess(image):
         image =  torch.from_numpy(image)
         image=torch.permute(image, (2, 0, 1))
         rgb_transform =  v2.Compose([                      
-                        v2.ToDtype(torch.float32, scale=True),
+                        v2.ToDtype(torch.float32),
                         v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
                     ])
         image = rgb_transform(image)

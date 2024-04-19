@@ -1,10 +1,12 @@
 # Gail Navigation
 
-This is a GAIL[1] based local navigation planner. 
+This is a GAIL[1] based local navigation planner. This branch is 
+the train branch that uses older version of pytorch so it is compatible with the
+HelloRIC pc 
 
 ## Requriements
 - ROS2 Foxy
-- CUDA 12.3 
+- CUDA 11.4 
 - Python 3.8.10
     - Other python package versions are given in the requirements.txt
 
