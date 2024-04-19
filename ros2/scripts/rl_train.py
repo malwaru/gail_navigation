@@ -72,7 +72,7 @@ def train_gail(rollouts,no_envs=1):
     gail_trainer.train(2048)
 
 if __name__ == "__main__":
-    file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
+    file_path="../../GailNavigationNetwork/data/traj2.hdf5"
     traj_generator=TrajFromFile(file_path)
     batch_size,demonstrations=traj_generator.create_demos()
     train_gail(demonstrations)
