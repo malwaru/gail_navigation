@@ -8,15 +8,10 @@ from imitation.rewards.reward_nets import BasicRewardNet,CnnRewardNet
 from imitation.util.networks import RunningNorm
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy, CnnPolicy
-# from imitation.data.types import Trajectory
-# from imitation.data import rollout
-# from gymnasium.wrappers import TimeLimit
 from imitation.data.wrappers import RolloutInfoWrapper
 import rclpy
 import numpy as np
-# import h5py
-# from GailNavigationNetwork.model import NaviNet
-# from GailNavigationNetwork.utilities import preprocess
+
 
 
 
