@@ -70,9 +70,11 @@ def train_gail(rollouts,no_envs=1):
     # )
     print(f"[rl_train] Entering GAIL training  ")
     gail_trainer.train(2048)
+    print(f"[rl_train] Training complete")
+    learner.save("PPO_KrisEnv-v1")
 
 if __name__ == "__main__":
     file_path="../../GailNavigationNetwork/data/traj2.hdf5"
     traj_generator=TrajFromFile(file_path)
     batch_size,demonstrations=traj_generator.create_demos()
-    train_gail(demonstrations)
+    # train_gail(demonstrations)
