@@ -5,12 +5,35 @@ import h5py
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
 from kris_envs.wrappers.utilities import normalise_action, transform_to_int8
+import cv2
 
 
 
 class TrajFromFile:
-    def __init__(self,file_path) -> None:
+    def __init__(self,file_path,visualise_img=False) -> None:
+        '''
+        Args:
+        file_path: str 
+        Path to the hdf5 file
+        visualise: bool
+        If true, visualises the images
+
+        '''
         self.file_path=file_path
+        self.visualise_img=visualise_img
+
+
+    def visualise(self,rgb,depth):
+           '''
+           
+           Visualises the rgb and depth images
+           '''
+           for i in range(len(rgb.shape[0])):
+            cv2.imshow("depth_image",depth)
+            cv2.imshow("rgb_image",rgb[i])
+            cv2.waitKey(0)
+
+
 
     def create_demos(self,DEVICE="cuda"):
         '''
@@ -49,6 +72,9 @@ class TrajFromFile:
             rgb_features, depth_features = model(rgb,depth)
             rgb_features=rgb_features.detach().cpu().numpy()
             depth_features=depth_features.detach().cpu().numpy()
+            ## If visualisation is needed
+            if self.visualise_img:
+                self.visualise(rgb_features,depth_features)  
             rgbs.append(rgb_features.flatten())
             depths.append(depth_features.flatten())
             targets.append(target.flatten()) 
