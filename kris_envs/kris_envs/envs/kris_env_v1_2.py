@@ -33,7 +33,7 @@ class KrisEnvTupleTest(gym.Env,Node):
         self.odometry_filtered_sub = self.create_subscription(
             Odometry, '/odometry/filtered', self.odometry_filtered_callback, 10)
         self.goal_pose_sub = self.create_subscription(
-            PoseStamped, '/goal_pose', self.goal_pose_callback, 10)
+            PoseStamped, '/target_goal', self.goal_pose_callback, 10)
         self.camera_info_sub = self.create_subscription(
             CameraInfo, '/framos/camera_info', self.camera_info_callback, 10)        
         self.sub_goal_pose_pub = self.create_publisher(
@@ -200,8 +200,6 @@ class KrisEnvTupleTest(gym.Env,Node):
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset()
-        # self.gazebo.reset_world()
-
         new_obs = self._get_obs()
 
         return new_obs,{}
@@ -232,4 +230,3 @@ class KrisEnvTupleTest(gym.Env,Node):
 
         '''
         print("Closing the environment")
-        # self.destroy_node()
