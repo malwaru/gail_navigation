@@ -75,7 +75,7 @@ def train_gail(rollouts,no_envs=1):
     print(f"[rl_train] Training complete")
     learner_rewards_after_training, _ = evaluate_policy(
     learner, env, 100, return_episode_rewards=True,)
-    learner.save("PPO_KrisEnv-v1")
+    learner.save("../../GailNavigationNetwork/data/models/PPO_KrisEnv-v1")
     print("mean reward after training:", np.mean(learner_rewards_after_training))
     print("mean reward before training:", np.mean(learner_rewards_before_training))
 
