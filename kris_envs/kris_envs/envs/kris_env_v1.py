@@ -31,7 +31,7 @@ class KrisEnvTuple(gym.Env,Node):
         self.image_raw_sub = self.create_subscription(
             Image, '/framos/image_raw', self.image_raw_callback, 10)
         self.odometry_filtered_sub = self.create_subscription(
-            Odometry, '/odometry/filtered', self.odometry_filtered_callback, 10)
+            Odometry, '/odometry/wheel', self.odometry_filtered_callback, 10)
         self.goal_pose_sub = self.create_subscription(
             PoseStamped, '/goal_pose', self.goal_pose_callback, 10)
         self.camera_info_sub = self.create_subscription(
