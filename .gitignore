@@ -1,3 +1,5 @@
+#
+GailNavigationNetwork/data/*
 # PyBuilder
 target/
 *.egg-info/

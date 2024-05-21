@@ -48,7 +48,7 @@ class KrisEnvTuple(gym.Env,Node):
         self.odoms_filtered = np.zeros(shape=(1,7),dtype=np.float32)
         self.target_vector = np.zeros(shape=(1,7),dtype=np.float32)
         self.target_vector_tolerance = 1.0 # meters
-        self.observation_delay=2.0 # seconds to wait for the observation to be ready
+        self.observation_delay=1.0 # seconds to wait for the observation to be ready
 
         while self.image_raw_data is None:
             self.get_logger().info("Waiting for camera feed")
