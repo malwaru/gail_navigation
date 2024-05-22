@@ -36,7 +36,7 @@ def linear_schedule(initial_value: float) -> Callable[[float], float]:
 
     return func
 
-def train_gail(rollouts,batch_size,no_envs=1):
+def train_gail(rollouts,demo_batch_size,no_envs=1):
     '''
     Trains the GAIL model
     Args:
@@ -76,7 +76,7 @@ def train_gail(rollouts,batch_size,no_envs=1):
     )
     gail_trainer = GAIL(
         demonstrations=rollouts,
-        demo_batch_size=batch_size, # Batch size of expert demonstrations
+        demo_batch_size=demo_batch_size-1, # Batch size of expert demonstrations
         gen_replay_buffer_capacity=512, # Capacity of the replay buffer number of obs-action-obs samples from the generator that can be stored)
         n_disc_updates_per_round=8, # Number of discriminator updates per round of training
         venv=env,
@@ -87,9 +87,9 @@ def train_gail(rollouts,batch_size,no_envs=1):
     )
 
     env.seed(SEED)
-    learner_rewards_before_training, _ = evaluate_policy(
-        learner, env, 100, return_episode_rewards=True
-    )
+    # learner_rewards_before_training, _ = evaluate_policy(
+    #     learner, env, 100, return_episode_rewards=True
+    # )
     print(f"[rl_train] Entering GAIL training  ")
     gail_trainer.train(2048)
     print(f"[rl_train] Training complete")
