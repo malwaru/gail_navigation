@@ -167,8 +167,9 @@ class KrisEnvTupleTest(gym.Env,Node):
         
     def _get_info(self):
         target_progress = self.goal_pose_data - self.odoms_filtered
-        info = {'target_vector':np.linalg.norm(target_progress)}
-
+        info = {'goal pose' : self.goal_pose_data,
+                'current_pose':self.odoms_filtered,
+                'target_progress':target_progress,}
         return info
     
     def do_action(self,action):
