@@ -53,7 +53,7 @@ def test_gail(model_path):
     
 
 if __name__ == "__main__":
-    model_path="../../GailNavigationNetwork/data/models/traj2.hdf5"
+    model_path="../../GailNavigationNetwork/data/models/PPO_KrisEnv-v1"
     # traj_generator=TrajFromFile(file_path)
     # batch_size,demonstrations=traj_generator.create_demos()
     test_gail(model_path)
