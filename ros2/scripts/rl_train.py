@@ -17,7 +17,7 @@ import numpy as np
 
 
 
-def train_gail(rollouts,no_envs=1):
+def train_gail(rollouts,batch_size,no_envs=1):
     '''
     Trains the GAIL model
     Args:
@@ -57,7 +57,7 @@ def train_gail(rollouts,no_envs=1):
     )
     gail_trainer = GAIL(
         demonstrations=rollouts,
-        demo_batch_size=24, # Batch size of expert demonstrations
+        demo_batch_size=batch_size, # Batch size of expert demonstrations
         gen_replay_buffer_capacity=512, # Capacity of the replay buffer number of obs-action-obs samples from the generator that can be stored)
         n_disc_updates_per_round=8, # Number of discriminator updates per round of training
         venv=env,
@@ -83,4 +83,4 @@ if __name__ == "__main__":
     file_path="../../GailNavigationNetwork/data/traj2.hdf5"
     traj_generator=TrajFromFile(file_path)
     batch_size,demonstrations=traj_generator.create_demos_from_file()
-    train_gail(demonstrations)
+    train_gail(demonstrations,batch_size)
