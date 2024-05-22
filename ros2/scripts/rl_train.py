@@ -93,11 +93,11 @@ def train_gail(rollouts,batch_size,no_envs=1):
     print(f"[rl_train] Entering GAIL training  ")
     gail_trainer.train(2048)
     print(f"[rl_train] Training complete")
-    learner_rewards_after_training, _ = evaluate_policy(
-    learner, env, 100, return_episode_rewards=True,)
+    # learner_rewards_after_training, _ = evaluate_policy(
+    # learner, env, 100, return_episode_rewards=True,)
     learner.save("../../GailNavigationNetwork/data/models/PPO_KrisEnv-v1")
-    print("mean reward after training:", np.mean(learner_rewards_after_training))
-    print("mean reward before training:", np.mean(learner_rewards_before_training))
+    # print("mean reward after training:", np.mean(learner_rewards_after_training))
+    # print("mean reward before training:", np.mean(learner_rewards_before_training))
 
 if __name__ == "__main__":
     file_path="../../GailNavigationNetwork/data/traj2.hdf5"
