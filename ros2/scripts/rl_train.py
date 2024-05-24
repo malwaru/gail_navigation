@@ -11,7 +11,6 @@ from stable_baselines3.ppo import MlpPolicy, CnnPolicy
 from imitation.data.wrappers import RolloutInfoWrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from typing import Callable
-
 import rclpy
 import numpy as np
 
@@ -102,7 +101,7 @@ def train_gail(rollouts,demo_batch_size,model_path=None,save_model=None,no_envs=
     # learner_rewards_before_training, _ = evaluate_policy(
     #     learner, env, 100, return_episode_rewards=True
     # )
-    print(f"[rl_train] Entering GAIL training  ")
+    print(f"[rl_train] Starting GAIL training  ")
     gail_trainer.train(2048)
     print(f"[rl_train] Training complete")
     # learner_rewards_after_training, _ = evaluate_policy(
