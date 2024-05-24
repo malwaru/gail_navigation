@@ -12,7 +12,6 @@ from imitation.data.wrappers import RolloutInfoWrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from typing import Callable
 
-
 import rclpy
 import numpy as np
 
@@ -36,11 +35,19 @@ def linear_schedule(initial_value: float) -> Callable[[float], float]:
 
     return func
 
-def train_gail(rollouts,demo_batch_size,no_envs=1):
+def train_gail(rollouts,demo_batch_size,model_path=None,save_model=None,no_envs=1):
     '''
     Trains the GAIL model
     Args:
     rollouts: gymnasium.Transition
+    demo_batch_size: int 
+      Batch size of expert demonstrations
+    model_path: str
+        path of the model to load for training
+    save_model: str
+        name of the model to save after training
+    no_envs: int
+        number of vectorised environments to train on
 
     Returns:
     None
@@ -57,17 +64,22 @@ def train_gail(rollouts,demo_batch_size,no_envs=1):
     )
     SEED = 42
     print(f"[rl_train] Training GAIL with {len(rollouts)} rollouts")
+
+    if model_path is not None:
+        learner = PPO.load(model_path, env=env)
+
+    else:
     
-    learner = PPO(
-        env=env,
-        policy=MlpPolicy,
-        batch_size=64, # Mini batch size
-        ent_coef=0.0,  # Entropy coefficient for the loss calculation
-        learning_rate=linear_schedule(0.0009),
-        gamma=0.95, # Discount factor
-        n_epochs=5, # Number of epochs when optimizing the surrogate objective
-        seed=SEED,
-    )
+        learner = PPO(
+            env=env,
+            policy=MlpPolicy,
+            batch_size=64, # Mini batch size
+            ent_coef=0.0,  # Entropy coefficient for the loss calculation
+            learning_rate=linear_schedule(0.0009),
+            gamma=0.95, # Discount factor
+            n_epochs=5, # Number of epochs when optimizing the surrogate objective
+            seed=SEED,
+        )
     print(f"[rl_train] Defining rewardnet")
     reward_net = BasicRewardNet(
         observation_space=env.observation_space,
@@ -95,12 +107,20 @@ def train_gail(rollouts,demo_batch_size,no_envs=1):
     print(f"[rl_train] Training complete")
     # learner_rewards_after_training, _ = evaluate_policy(
     # learner, env, 100, return_episode_rewards=True,)
-    learner.save("../../GailNavigationNetwork/data/models/PPO_KrisEnv-v1")
+    if save_model is not None:
+        model_save_path="../../GailNavigationNetwork/data/models/"+save_model
+        learner.save(model_save_path)
     # print("mean reward after training:", np.mean(learner_rewards_after_training))
     # print("mean reward before training:", np.mean(learner_rewards_before_training))
 
 if __name__ == "__main__":
     file_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj2.hdf5"
+    model_folder_path="../../GailNavigationNetwork/data/models/"
+    model_name="PPO_KrisEnv-v1"
+    model_path=model_folder_path+"/"+model_name
+    save_model="PPO_KrisEnv-v2"
     traj_generator=TrajFromFile(file_path)
     batch_size,demonstrations=traj_generator.create_demos_from_file()
-    train_gail(demonstrations,batch_size)
+    train_gail(rollouts=demonstrations,demo_batch_size=batch_size,
+               model_path=model_path,save_model=save_model,
+               no_envs=1)
