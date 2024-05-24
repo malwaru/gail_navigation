@@ -100,7 +100,7 @@ def train_gail(rollouts,demo_batch_size,no_envs=1):
     # print("mean reward before training:", np.mean(learner_rewards_before_training))
 
 if __name__ == "__main__":
-    file_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj2.hdf5"
+    file_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj1.hdf5"
     traj_generator=TrajFromFile(file_path)
     batch_size,demonstrations=traj_generator.create_demos_from_file()
     train_gail(demonstrations,batch_size)
