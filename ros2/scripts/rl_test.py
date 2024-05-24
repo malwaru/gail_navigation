@@ -17,7 +17,7 @@ import numpy as np
 
 
 
-def test_gail(model_path):
+def test_gail(model_path,demo=None):
     '''
     Trains the GAIL model
     Args:
@@ -42,11 +42,17 @@ def test_gail(model_path):
 
     vec_env = expert.get_env()
     obs = vec_env.reset()
+    traj=[]
     for _ in range(1000):
         action, _states = expert.predict(obs)
         obs, rewards, dones, info = vec_env.step(action)
+        # print(f"Stepping to {action}")
+
+    if demo is not None:
+        print(f"compare with expert trajectory")
 
     print("Finished reaching goal expert policy")
+
   
 
         
@@ -54,6 +60,6 @@ def test_gail(model_path):
 
 if __name__ == "__main__":
     model_path="../../GailNavigationNetwork/data/models/PPO_KrisEnv-v1"
-    # traj_generator=TrajFromFile(file_path)
-    # batch_size,demonstrations=traj_generator.create_demos()
+    demo_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj1.hdf5"
+    print(f"Model : {model_path} loaded and ready to test ") 
     test_gail(model_path)
