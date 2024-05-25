@@ -33,8 +33,8 @@ class CmdVelPublisher(Node):
         self.pid_linear=[0.6,0.8,0.4]
         self.pid_angualar=[0.8,0.8,0.4]
         #Maximum allowable velocities
-        self.cmd_vel_linear_max=0.8
-        self.cmd_vel_angular_max=1.0
+        self.cmd_vel_linear_max=0.4
+        self.cmd_vel_angular_max=0.5
     
  
     def subgoal_pose_callback(self,msg):

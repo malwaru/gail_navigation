@@ -113,13 +113,16 @@ def train_gail(rollouts,demo_batch_size,model_path=None,save_model=None,no_envs=
     # print("mean reward before training:", np.mean(learner_rewards_before_training))
 
 if __name__ == "__main__":
-    file_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj3.hdf5"
+    # file_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj4.hdf5"
+    folder_path="../../GailNavigationNetwork/data/trajectories/hard_world"
     model_folder_path="../../GailNavigationNetwork/data/models/"
-    model_name="PPO_KrisEnv-v2"
+    model_name="PPO_KrisEnv-v5_total"
+    # model_name=None
     model_path=model_folder_path+"/"+model_name
-    save_model="PPO_KrisEnv-v3"
-    traj_generator=TrajFromFile(file_path)
-    batch_size,demonstrations=traj_generator.create_demos_from_file()
+    save_model="PPO_KrisEnv-v6_total"
+    traj_generator=TrajFromFile(folder_path)
+    # batch_size,demonstrations=traj_generator.create_demos_from_file()
+    batch_size,demonstrations=traj_generator.create_demos_from_folder()
     train_gail(rollouts=demonstrations,demo_batch_size=batch_size,
                model_path=model_path,save_model=save_model,
                no_envs=1)
