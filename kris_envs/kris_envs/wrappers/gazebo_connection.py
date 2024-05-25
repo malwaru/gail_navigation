@@ -90,9 +90,11 @@ class GazeboConnection(Node):
         '''
         Reset the simulation and spawn the robot again        
         '''
-        self.reset_sim()  
-        self.delete_entity()
-        self.spawn_robot()
+        # self.reset_sim()  
+        # self.delete_entity()
+        origin, goal = self.generate_poses(max_val=15.0, min_val=-15.0, max_diff=10.0)
+        self.goal_pose_pub.publish(goal)
+        # self.spawn_robot(origin, goal)
 
     def init_values(self):
         # self.reset_sim()
@@ -270,13 +272,13 @@ class GazeboConnection(Node):
                 'Was Gazebo started with GazeboRosFactory?')
 
     
-    def spawn_robot(self):
+    def spawn_robot(self,origin,goal):
         '''
         Spawn the robot in the gazebo environment
         '''
 
 
-        origin, goal = self.generate_poses(max_val=20.0, min_val=-20.0, max_diff=10.0)
+        # origin, goal = self.generate_poses(max_val=15.0, min_val=-15.0, max_diff=10.0)
         self.get_logger().info('Loading entity XML from file %s' % self.urdf)
         if not os.path.exists(self.urdf):
             self.get_logger().error('Error: specified file %s does not exist', self.urdf)
@@ -307,13 +309,13 @@ class GazeboConnection(Node):
         entity_xml = ElementTree.tostring(xml_parsed)
         success=self._spawn_entity(entity_xml, origin,self.timeout)
 
-        if success:
+        # if success:
             
-            self.goal_pose_pub.publish(goal)
-            return 0
-        else:
-            self.get_logger().error('Spawn service failed. Exiting.')
-            return 1
+        #     self.goal_pose_pub.publish(goal)
+        #     return 0
+        # else:
+        #     self.get_logger().error('Spawn service failed. Exiting.')
+        #     return 1
 
 
     

@@ -1,0 +1,198 @@
+Available device is cuda of name NVIDIA GeForce GTX 1080
+
+[kris_env:trajgen] observation array shape (73, 178091)
+Closing the environment
+[gazebo_connection] Respawn Pose: 
+               position 
+x:-1.0410323754391388                 
+y:11.604239023371303                 
+z:6.0                 
+ orintation: 
+x-0.6137184321191573                 
+y:-0.0                 
+z:0.0                 
+w:0.7895249749546897                
+
+ Goal Pose:                 
+ position 
+x:8.058967624560792                 
+y:8.004239023371309                 
+z:0.8                 
+ orintation: 
+x0.8970159888424928                 
+y:0.0                 
+z:0.0                 
+w:0.4419980947480711
+[gazebo_connection] After read     pose
+[rl_train] Training GAIL with 72 rollouts
+[rl_train] Defining rewardnet
+[gazebo_connection] Respawn Pose: 
+               position 
+x:-3.7637964345791257                 
+y:13.521429192297486                 
+z:6.0                 
+ orintation: 
+x-0.6659976702926241                 
+y:-0.0                 
+z:0.0                 
+w:0.7459538210672274                
+
+ Goal Pose:                 
+ position 
+x:-8.863796434579143                 
+y:6.021429192297488                 
+z:0.8                 
+ orintation: 
+x-0.30500603780251007                 
+y:-0.0                 
+z:0.0                 
+w:0.9523504170755709
+[gazebo_connection] After read     pose
+[rl_train] Starting GAIL training  
+[gazebo_connection] Respawn Pose: 
+               position 
+x:-10.319440786726904                 
+y:-10.32016438991392                 
+z:6.0                 
+ orintation: 
+x0.9833975727762113                 
+y:0.0                 
+z:0.0                 
+w:0.1814640842091245                
+
+ Goal Pose:                 
+ position 
+x:-14.500000000000002                 
+y:-1.500000000000048                 
+z:0.8                 
+ orintation: 
+x-0.9129175851653627                 
+y:-0.0                 
+z:0.0                 
+w:0.4081439484983731
+[gazebo_connection] After read     pose
+Available device is cuda of name NVIDIA GeForce GTX 1080
+
+[kris_env:trajgen] observation array shape (73, 178091)
+Closing the environment
+[gazebo_connection] Respawn Pose: 
+               position 
+x:-14.29572975107033                 
+y:9.553829249327293                 
+z:6.0                 
+ orintation: 
+x0.8172824150675265                 
+y:0.0                 
+z:0.0                 
+w:0.5762373243910806                
+
+ Goal Pose:                 
+ position 
+x:-8.700000000000022                 
+y:11.253829249327291                 
+z:0.8                 
+ orintation: 
+x-0.6678886778454801                 
+y:-0.0                 
+z:0.0                 
+w:0.7442611866850349
+[gazebo_connection] After read     pose
+[rl_train] Training GAIL with 72 rollouts
+[rl_train] Defining rewardnet
+[gazebo_connection] Respawn Pose: 
+               position 
+x:-3.7637964345791257                 
+y:13.521429192297486                 
+z:6.0                 
+ orintation: 
+x-0.6659976702926241                 
+y:-0.0                 
+z:0.0                 
+w:0.7459538210672274                
+
+ Goal Pose:                 
+ position 
+x:-8.863796434579143                 
+y:6.021429192297488                 
+z:0.8                 
+ orintation: 
+x-0.30500603780251007                 
+y:-0.0                 
+z:0.0                 
+w:0.9523504170755709
+[gazebo_connection] After read     pose
+[rl_train] Starting GAIL training  
+[gazebo_connection] Respawn Pose: 
+               position 
+x:-10.319440786726904                 
+y:-10.32016438991392                 
+z:6.0                 
+ orintation: 
+x0.9833975727762113                 
+y:0.0                 
+z:0.0                 
+w:0.1814640842091245                
+
+ Goal Pose:                 
+ position 
+x:-14.500000000000002                 
+y:-1.500000000000048                 
+z:0.8                 
+ orintation: 
+x-0.9129175851653627                 
+y:-0.0                 
+z:0.0                 
+w:0.4081439484983731
+[gazebo_connection] After read     pose
+Available device is cuda of name NVIDIA GeForce GTX 1080
+
+[kris_env:trajgen] observation array shape (73, 178091)
+Closing the environment
+[gazebo_connection] Respawn Pose: 
+               position 
+x:14.58238556624923                 
+y:9.602603840703559                 
+z:6.0                 
+ orintation: 
+x-0.9324098917911144                 
+y:-0.0                 
+z:0.0                 
+w:0.36140253691705365                
+
+ Goal Pose:                 
+ position 
+x:12.6823855662492                 
+y:2.802603840703558                 
+z:0.8                 
+ orintation: 
+x0.9313029968357376                 
+y:0.0                 
+z:0.0                 
+w:0.36424542287415806
+[gazebo_connection] After read     pose
+Available device is cuda of name NVIDIA GeForce GTX 1080
+
+[kris_env:trajgen] observation array shape (73, 178091)
+Closing the environment
+[gazebo_connection] Respawn Pose: 
+               position 
+x:-11.96107030327676                 
+y:-1.3280103368478748                 
+z:6.0                 
+ orintation: 
+x0.45905842943375913                 
+y:0.0                 
+z:0.0                 
+w:0.8884060774025639                
+
+ Goal Pose:                 
+ position 
+x:-9.20000000000002                 
+y:-9.528010336847881                 
+z:0.8                 
+ orintation: 
+x-0.7634969198959467                 
+y:-0.0                 
+z:0.0                 
+w:0.6458114688586772
+[gazebo_connection] After read     pose
