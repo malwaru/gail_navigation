@@ -10,6 +10,7 @@ import numpy as np
 import random
 from xml.etree import ElementTree
 from rclpy.logging import LoggingSeverity
+import yaml 
 
 
 
@@ -73,6 +74,18 @@ class GazeboConnection(Node):
         else:
             self.get_logger().error("/gazebo/unpause_physics service call failed")
 
+    def load_yaml(self,file_path='../../../GailNavigationNetwork/data/start_poses_hard.yaml'):
+        '''
+        load data ffrom a yaml file
+        
+        '''
+        with open(file_path, 'r') as file:
+            data = yaml.safe_load(file)
+
+        start_poses = np.array(data.get['start_poses',[]])
+        
+        return start_poses
+
     def reset_sim(self):
         '''
         Reset the simualtion
@@ -85,6 +98,8 @@ class GazeboConnection(Node):
             self.get_logger().info("/gazebo/reset_simulation service call successful")
         else:
             self.get_logger().error("/gazebo/reset_simulation service call failed")
+
+    
 
     def reset_world(self):
         '''
@@ -157,8 +172,12 @@ class GazeboConnection(Node):
         max_diff: Maximum distance between current pose and goal poses
         
         '''
-        origin_x = np.random.uniform(min_val, max_val)
-        origin_y = np.random.uniform(min_val, max_val)
+        start_pose_array = self.load_yaml()
+        start_pose_int = np.random.randint(0,10)
+        origin_x = start_pose_array[start_pose_int][0]
+        origin_y = start_pose_array[start_pose_int][1]        
+        # origin_x = np.random.uniform(min_val, max_val)
+        # origin_y = np.random.uniform(min_val, max_val)
         origin_yaw = self.quaternion_from_euler(0.0,0.0,np.random.uniform(0, 2 * np.pi) )  # Assuming yaw is in radians
 
         # Calculate the range for the grid
