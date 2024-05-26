@@ -10,6 +10,7 @@ import numpy as np
 import random
 from xml.etree import ElementTree
 from rclpy.logging import LoggingSeverity
+import time
 import yaml 
 
 
@@ -105,11 +106,15 @@ class GazeboConnection(Node):
         '''
         Reset the simulation and spawn the robot again        
         '''
-        # self.reset_sim()  
-        # self.delete_entity()
+        self.reset_sim()  
+        time.sleep(1)
+        self.delete_entity()
+        time.sleep(1)
         origin, goal = self.generate_poses(max_val=15.0, min_val=-15.0, max_diff=10.0)
         self.goal_pose_pub.publish(goal)
-        # self.spawn_robot(origin, goal)
+        self.spawn_robot(origin, goal)
+        # Wait for all the sensors to load correctly
+        time.sleep(3)
 
     def init_values(self):
         # self.reset_sim()

@@ -41,6 +41,10 @@ class TrajFromFile:
         Creates a gymnasium transition from the given file path
         of hdf5 file of known structure
 
+        The array of odom_data is shifted by one time stamp to get
+        the action of the agent based on where the robot actually ended up in the next
+        time step
+
         Args:
         file_path: str  
         Path to the hdf5 file   
@@ -81,7 +85,8 @@ class TrajFromFile:
             targets.append(target.flatten()) 
             acts.append(act)
             
-
+        #Create actions by shifting the odom array to get where the agent moveed 
+        # In the next time step
         acts=np.array(acts[:-1])
         dones=[False for i in range(batch_size)]
         dones[-1]=True
@@ -115,7 +120,10 @@ class TrajFromFile:
         depths=[]
         targets=[]  
         acts=[]
+        dones=[]
+        
         files=glob.glob(self.file_path+'/*.hdf5')
+        total_batch_size=0
         for file in files:
             read_file= h5py.File(file, "r")
             model= NaviNet().to(DEVICE)
@@ -144,12 +152,15 @@ class TrajFromFile:
                 targets.append(target.flatten()) 
                 acts.append(act)
             read_file.close()
+            total_batch_size+=batch_size
+            dones.append([False for i in range(batch_size)])
+            dones[-1]=True
                 
 
         acts=np.array(acts[:-1])
-        dones=[False for i in range(batch_size)]
-        dones[-1]=True
-        infos= [{} for i in range(batch_size-1)]
+        # dones=[False for i in range(total_batch_size)]
+        # dones[-1]=True
+        infos= [{} for i in range(total_batch_size-1)]
         rgbs=np.array(rgbs)
         depths=np.array(depths)
         targets=np.array(targets)
@@ -157,4 +168,4 @@ class TrajFromFile:
         print(f"[kris_env:trajgen] observation array shape {obs_array.shape}")
         traj = Trajectory(obs=obs_array, acts=acts,infos=infos,terminal=dones)
 
-        return batch_size,rollout.flatten_trajectories([traj])
+        return total_batch_size,rollout.flatten_trajectories([traj])
