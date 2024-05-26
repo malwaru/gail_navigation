@@ -44,10 +44,10 @@ class KrisEnvTupleTest(gym.Env,Node):
         self.image_raw_data = None
         self.depth_image_raw_data = None
         self.depth_camera_info_data = None
-        self.goal_pose_data = np.zeros(shape=(1,7),dtype=np.float32)
+        self.goal_pose_data =  None
         self.odoms_filtered = np.zeros(shape=(1,7),dtype=np.float32)
         self.target_vector = np.zeros(shape=(1,7),dtype=np.float32)
-        self.target_vector_tolerance = 1.0 # meters
+        self.target_vector_tolerance = 1.5 # meters
         self.observation_delay=1.0 # seconds to wait for the observation to be ready
 
         while self.image_raw_data is None:
@@ -56,7 +56,7 @@ class KrisEnvTupleTest(gym.Env,Node):
 
         self.get_logger().info("Camera feed received")
 
-        while self.goal_pose_sub  is None:
+        while self.goal_pose_data is None:
             self.get_logger().info("Waiting for goal pose")
             rclpy.spin_once(self)
 
@@ -110,13 +110,13 @@ class KrisEnvTupleTest(gym.Env,Node):
         self.odoms_filtered = np.array(odom_data,dtype=np.float32)
         
     def goal_pose_callback(self, msg):
-        goal_data=[msg.pose.pose.position.x, 
-                    msg.pose.pose.position.y, 
-                    msg.pose.pose.position.z,
-                    msg.pose.pose.orientation.x, 
-                    msg.pose.pose.orientation.y,
-                    msg.pose.pose.orientation.z,
-                    msg.pose.pose.orientation.w]
+        goal_data=[msg.pose.position.x, 
+                    msg.pose.position.y, 
+                    msg.pose.position.z,
+                    msg.pose.orientation.x, 
+                    msg.pose.orientation.y,
+                    msg.pose.orientation.z,
+                    msg.pose.orientation.w]
         self.goal_pose_data = np.array(goal_data,dtype=np.float32)
     def camera_info_callback(self, msg):
         self.depth_camera_info_data = msg

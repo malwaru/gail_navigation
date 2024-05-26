@@ -48,8 +48,8 @@ def test_gail(model_path,demo=None):
         obs, rewards, dones, info = vec_env.step(action)
         # print(f"Stepping to {action}")
 
-    if demo is not None:
-        print(f"compare with expert trajectory")
+    # if demo is not None:
+    #     print(f"compare with expert trajectory")
 
     print("Finished reaching goal expert policy")
 
@@ -59,7 +59,7 @@ def test_gail(model_path,demo=None):
     
 
 if __name__ == "__main__":
-    model_path="../../GailNavigationNetwork/data/models/PPO_KrisEnv-v1"
-    demo_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj1.hdf5"
+    model_path="../../GailNavigationNetwork/data/models/PPO_KrisEnv-v6_total"
+    # demo_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj1.hdf5"
     print(f"Model : {model_path} loaded and ready to test ") 
     test_gail(model_path)
