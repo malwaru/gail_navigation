@@ -39,14 +39,14 @@ class BagReaderNode(Node):
         self.images= self.hdf5_file.create_group("images")
         self.kris_dynamics= self.hdf5_file.create_group("kris_dynamics")
         self.odom_data=self.kris_dynamics.create_group("odom_data")
-        self.rgb_dataset = self.images.create_dataset("rgb_data",
-                                                      (1,self.image_shape_resized[0],self.image_shape_resized[1],3),
-                                                        maxshape=(None,self.image_shape_resized[0],self.image_shape_resized[1],3),
-                                                        dtype=np.uint8)
-        self.depth_dataset = self.images.create_dataset("depth_data", 
-                                                      (1,self.image_shape_resized[0],self.image_shape_resized[1]),
-                                                        maxshape=(None,self.image_shape_resized[0],self.image_shape_resized[1]),
-                                                        dtype=np.uint8)
+        # self.rgb_dataset = self.images.create_dataset("rgb_data",
+        #                                               (1,self.image_shape_resized[0],self.image_shape_resized[1],3),
+        #                                                 maxshape=(None,self.image_shape_resized[0],self.image_shape_resized[1],3),
+        #                                                 dtype=np.uint8)
+        # self.depth_dataset = self.images.create_dataset("depth_data", 
+        #                                               (1,self.image_shape_resized[0],self.image_shape_resized[1]),
+        #                                                 maxshape=(None,self.image_shape_resized[0],self.image_shape_resized[1]),
+        #                                                 dtype=np.uint8)
         
         self.imu_dataset = self.kris_dynamics.create_dataset("imu_data",(1, 6), maxshape=(None, 6), dtype='f')
         #initialize the odom variables
@@ -276,8 +276,8 @@ class BagReaderNode(Node):
                 # rgb_encoded = self.im2bytes(img_resized)
 
                 # Append the data to the HDF5 dataset
-                self.rgb_dataset.resize(self.rgb_dataset.shape[0] + 1, axis=0)
-                self.rgb_dataset[-1] = img_resized
+                # self.rgb_dataset.resize(self.rgb_dataset.shape[0] + 1, axis=0)
+                # self.rgb_dataset[-1] = img_resized
                 
             if topic=="/framos/depth/image_raw":
                 # The depth values are in metres
@@ -288,8 +288,8 @@ class BagReaderNode(Node):
                 img_depth_resized=img_resize(depth_data,self.image_compression_ratio)
 
             # Append the data to the HDF5 dataset
-                self.depth_dataset.resize(self.depth_dataset.shape[0] + 1, axis=0)
-                self.depth_dataset[-1] = img_depth_resized
+                # self.depth_dataset.resize(self.depth_dataset.shape[0] + 1, axis=0)
+                # self.depth_dataset[-1] = img_depth_resized
                 
 
             elif topic == '/imu':
