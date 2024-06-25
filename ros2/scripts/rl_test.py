@@ -1,5 +1,4 @@
 from stable_baselines3 import PPO
-# import gymnasium as gym
 from imitation.util.util import make_vec_env
 import kris_envs
 from kris_envs.wrappers.trajgen import TrajFromFile
@@ -46,11 +45,6 @@ def test_gail(model_path,demo=None):
     for _ in range(1000):
         action, _states = expert.predict(obs)
         obs, rewards, dones, info = vec_env.step(action)
-        # print(f"Stepping to {action}")
-
-    # if demo is not None:
-    #     print(f"compare with expert trajectory")
-
     print("Finished reaching goal expert policy")
 
   
