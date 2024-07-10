@@ -1,6 +1,10 @@
+#
+GailNavigationNetwork/data/*
 # PyBuilder
 target/
 *.egg-info/
+*.egg-info/*
+
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -24,7 +28,7 @@ venv.bak/
 .vscode/*
 .pyc
 */__pycache__/*
-
+GailNavigationNetwork/GailNavigationNetwork/__pycache__/*
 
 
 # Byte-compiled / optimized / DLL files

@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image,CameraInfo
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist,PoseStamped
+from geometry_msgs.msg import Twist,PoseStamped,Pose
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -31,13 +31,14 @@ class KrisEnvTuple(gym.Env,Node):
         self.image_raw_sub = self.create_subscription(
             Image, '/framos/image_raw', self.image_raw_callback, 10)
         self.odometry_filtered_sub = self.create_subscription(
-            Odometry, '/odometry/filtered', self.odometry_filtered_callback, 10)
+            Odometry, '/odometry/wheel', self.odometry_filtered_callback, 10)
         self.goal_pose_sub = self.create_subscription(
-            PoseStamped, '/goal_pose', self.goal_pose_callback, 10)
+            PoseStamped, '/target_goal', self.goal_pose_callback, 10)
         self.camera_info_sub = self.create_subscription(
             CameraInfo, '/framos/camera_info', self.camera_info_callback, 10)        
         self.sub_goal_pose_pub = self.create_publisher(
             PoseStamped,'/subgoal_pose', 10)
+
         
         self._cvbridge = CvBridge()
         self.gazebo = GazeboConnection()
@@ -48,7 +49,7 @@ class KrisEnvTuple(gym.Env,Node):
         self.odoms_filtered = np.zeros(shape=(1,7),dtype=np.float32)
         self.target_vector = np.zeros(shape=(1,7),dtype=np.float32)
         self.target_vector_tolerance = 1.0 # meters
-        self.observation_delay=2.0 # seconds to wait for the observation to be ready
+        self.observation_delay=1.0 # seconds to wait for the observation to be ready
 
         while self.image_raw_data is None:
             self.get_logger().info("Waiting for camera feed")
@@ -104,13 +105,13 @@ class KrisEnvTuple(gym.Env,Node):
         self.odoms_filtered = np.array(odom_data,dtype=np.float32)
         
     def goal_pose_callback(self, msg):
-        goal_data=[msg.pose.pose.position.x, 
-                    msg.pose.pose.position.y, 
-                    msg.pose.pose.position.z,
-                    msg.pose.pose.orientation.x, 
-                    msg.pose.pose.orientation.y,
-                    msg.pose.pose.orientation.z,
-                    msg.pose.pose.orientation.w]
+        goal_data=[msg.pose.position.x, 
+                    msg.pose.position.y, 
+                    msg.pose.position.z,
+                    msg.pose.orientation.x, 
+                    msg.pose.orientation.y,
+                    msg.pose.orientation.z,
+                    msg.pose.orientation.w]
         self.goal_pose_data = np.array(goal_data,dtype=np.float32)
     def camera_info_callback(self, msg):
         self.depth_camera_info_data = msg
@@ -194,8 +195,7 @@ class KrisEnvTuple(gym.Env,Node):
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset()
-        # self.gazebo.reset_world()
-
+        self.gazebo.reset_world()
         new_obs = self._get_obs()
 
         return new_obs,{}

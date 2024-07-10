@@ -48,8 +48,10 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/database_creator.py
   scripts/publish_cmd_vel.py
-  scripts/depth_probe.py
-  scripts/test_script.py
+  # scripts/depth_probe.py
+  scripts/goal_republisher.py
+  scripts/test_data_collector.py
+  # scripts/test_script.py
   # scripts/kris_envs/envs/gazebo_connection.py
   DESTINATION lib/${PROJECT_NAME}
 )
