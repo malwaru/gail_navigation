@@ -16,13 +16,19 @@ import numpy as np
 from gymnasium import spaces
 import time
 from kris_envs.wrappers.utilities import denormalise_action,transform_to_int8,\
-                                        img_resize,preprocess_target
+                                        img_resize,preprocess_target,scale_arrays
 from kris_envs.wrappers.gazebo_connection import GazeboConnection
 import torch
 
 
 class KrisEnvTuple(gym.Env,Node):
+    '''
+    This environment is used for training the agent. This env does not 
+    wait for the goal pose to be received before starting.
+    Therefore use KriEnv_v1_2 for deploying  the agent
+    '''
     def __init__(self):
+      
         super(KrisEnvTuple,self).__init__('kris_env_node')
         #ROS initializations
         self.image_dim=(240,320)          
@@ -70,8 +76,9 @@ class KrisEnvTuple(gym.Env,Node):
         # GailNavigationNetwork  NaviNet
         # The channel shape are taken from the output of the NaviNet
         # after passing the image through the network
-        # states in the order target vector, rgb_features, depth_features are fl
+        # states in the order target vector, rgb_features, depth_features
         # flattened and concatenated to form the observation space
+        # Eacg feature is of shape 1280 therefore the observation space is 3840
         # Issues https://stable-baselines3.readthedocs.io/en/master/guide/algos.html
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(3840,), dtype=np.float32)
         self.DEVICE="cuda" if torch.cuda.is_available() else "cpu"
@@ -130,18 +137,25 @@ class KrisEnvTuple(gym.Env,Node):
         ========
         the image from the camera
         '''
+        self.target_vector = self.goal_pose_data - self.odoms_filtered.flatten()
         rgb_image=preprocess(self.image_raw_data)
-        depth_image=preprocess(self.depth_image_raw_data)  
-        self.target_vector = (self.goal_pose_data - self.odoms_filtered).flatten()
+        depth_image=transform_to_int8(self.depth_image_raw_data)
+        depth_image=preprocess(depth_image)        
         target=preprocess_target(self.target_vector)
-        (rgb, depth,target) = (rgb.to(DEVICE),depth.to(DEVICE),target.to(DEVICE))
-        rgb_features, depth_features = self.model(rgb_image,
-                                                  depth_image)
-        
-        rgb_features=rgb_features.detach().cpu().numpy().flatten()
-        depth_features=depth_features.detach().cpu().numpy().flatten()
+        (rgb_image, depth_image,target) = (rgb_image.to(self.DEVICE),
+                                           depth_image.to(self.DEVICE),
+                                           target.to(self.DEVICE))  
 
-        flatten_obs=np.concatenate((self.target_vector,rgb_features,depth_features))
+        rgb_features, depth_features,target_features = self.model(rgb_image,
+                                                  depth_image,target)
+        #Detach the tensors and convert to numpy arrays and scale the arrays
+        rgb_features=rgb_features.detach().cpu().numpy()
+        rgb_features=scale_arrays(rgb_features)
+        depth_features=depth_features.detach().cpu().numpy()
+        depth_features=scale_arrays(depth_features)
+        target_features=target_features.detach().cpu().numpy()
+        target_features=scale_arrays(target_features)
+        flatten_obs=np.concatenate((target_features,rgb_features,depth_features))
         
         return flatten_obs
     
