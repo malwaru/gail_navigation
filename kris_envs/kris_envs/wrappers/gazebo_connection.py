@@ -362,16 +362,3 @@ class GazeboConnection(Node):
 
         return q
 
-# def main(args=None):
-#     rclpy.logging._root_logger.log(
-#         'Starting gazebo connection node ...',
-#         LoggingSeverity.INFO
-#     )
-#     rclpy.init(args=args)
-#     gazebo_connection = GazeboConnection()
-#     rclpy.spin(gazebo_connection)
-#     gazebo_connection.destroy_node()
-#     rclpy.shutdown()
-
-# if __name__ == '__main__':
-#     main()

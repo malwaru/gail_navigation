@@ -16,9 +16,9 @@ import numpy as np
 from gymnasium import spaces
 import time
 from kris_envs.wrappers.utilities import denormalise_action,transform_to_int8,\
-                                        img_resize
+                                        img_resize,preprocess_target
 from kris_envs.wrappers.gazebo_connection import GazeboConnection
-
+import torch
 
 
 class KrisEnvTuple(gym.Env,Node):
@@ -73,9 +73,11 @@ class KrisEnvTuple(gym.Env,Node):
         # states in the order target vector, rgb_features, depth_features are fl
         # flattened and concatenated to form the observation space
         # Issues https://stable-baselines3.readthedocs.io/en/master/guide/algos.html
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(178091,), dtype=np.float32)
-        self.model= NaviNet()
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(3840,), dtype=np.float32)
+        self.DEVICE="cuda" if torch.cuda.is_available() else "cpu"
+        self.model= NaviNet().to(self.DEVICE)
         self.model.eval()
+        
 
         
     def depth_image_raw_callback(self, msg):
@@ -130,9 +132,12 @@ class KrisEnvTuple(gym.Env,Node):
         '''
         rgb_image=preprocess(self.image_raw_data)
         depth_image=preprocess(self.depth_image_raw_data)  
+        self.target_vector = (self.goal_pose_data - self.odoms_filtered).flatten()
+        target=preprocess_target(self.target_vector)
+        (rgb, depth,target) = (rgb.to(DEVICE),depth.to(DEVICE),target.to(DEVICE))
         rgb_features, depth_features = self.model(rgb_image,
                                                   depth_image)
-        self.target_vector = (self.goal_pose_data - self.odoms_filtered).flatten()
+        
         rgb_features=rgb_features.detach().cpu().numpy().flatten()
         depth_features=depth_features.detach().cpu().numpy().flatten()
 

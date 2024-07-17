@@ -116,9 +116,10 @@ if __name__ == "__main__":
     file_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj4.hdf5"
     # folder_path="../../GailNavigationNetwork/data/trajectories/hard_world"
     model_folder_path="../../GailNavigationNetwork/data/models/"
-    model_name="PPO_KrisEnv-v5_total"
-    # model_name=None
-    model_path=model_folder_path+"/"+model_name
+    # model_name="PPO_KrisEnv-v5_total"
+    # model_path=model_folder_path+"/"+model_name
+    model_name=None
+    
     save_model="PPO_KrisEnv-v6_total"
     traj_generator=TrajFromFile(file_path,visualise_img=True)
     batch_size,demonstrations=traj_generator.create_demos_from_file()
