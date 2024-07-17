@@ -1,5 +1,4 @@
 from stable_baselines3 import PPO
-# import gymnasium as gym
 from imitation.util.util import make_vec_env
 import kris_envs
 from kris_envs.wrappers.trajgen import TrajFromFile
@@ -98,19 +97,13 @@ def train_gail(rollouts,demo_batch_size,model_path=None,save_model=None,no_envs=
     )
 
     env.seed(SEED)
-    # learner_rewards_before_training, _ = evaluate_policy(
-    #     learner, env, 100, return_episode_rewards=True
-    # )
     print(f"[rl_train] Starting GAIL training  ")
     gail_trainer.train(2048)
-    print(f"[rl_train] Training complete")
-    # learner_rewards_after_training, _ = evaluate_policy(
-    # learner, env, 100, return_episode_rewards=True,)
+    print(f"[rl_train] Training complete") 
     if save_model is not None:
         model_save_path="../../GailNavigationNetwork/data/models/"+save_model
         learner.save(model_save_path)
-    # print("mean reward after training:", np.mean(learner_rewards_after_training))
-    # print("mean reward before training:", np.mean(learner_rewards_before_training))
+
 
 if __name__ == "__main__":
     file_path="../../GailNavigationNetwork/data/trajectories/medium_world/traj4.hdf5"
@@ -123,7 +116,7 @@ if __name__ == "__main__":
     save_model="PPO_KrisEnv-v6_total"
     traj_generator=TrajFromFile(file_path,visualise_img=True)
     batch_size,demonstrations=traj_generator.create_demos_from_file()
-    # batch_size,demonstrations=traj_generator.create_demos_from_folder()
-    # train_gail(rollouts=demonstrations,demo_batch_size=batch_size,
-    #            model_path=model_path,save_model=save_model,
-    #            no_envs=1)
+    batch_size,demonstrations=traj_generator.create_demos_from_folder()
+    train_gail(rollouts=demonstrations,demo_batch_size=batch_size,
+               model_path=model_path,save_model=save_model,
+               no_envs=1)
