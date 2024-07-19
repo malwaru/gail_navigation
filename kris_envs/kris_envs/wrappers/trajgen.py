@@ -176,7 +176,7 @@ class TrajFromFile:
         rgbs=np.array(rgbs)
         depths=np.array(depths)
         targets=np.array(targets)
-        obs_array=np.concatenate((targets,rgbs,depths),axis=1)
+        obs_array=np.concatenate((targets,rgbs,depths),axis=0)
         print(f"[kris_env:trajgen] observation array shape {obs_array.shape}")
         traj = Trajectory(obs=obs_array, acts=acts,infos=infos,terminal=dones)
 

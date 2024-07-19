@@ -137,7 +137,7 @@ class KrisEnvTuple(gym.Env,Node):
         ========
         the image from the camera
         '''
-        self.target_vector = self.goal_pose_data - self.odoms_filtered.flatten()
+        self.target_vector = self.goal_pose_data - self.odoms_filtered
         rgb_image=preprocess(self.image_raw_data)
         depth_image=transform_to_int8(self.depth_image_raw_data)
         depth_image=preprocess(depth_image)        
@@ -169,8 +169,11 @@ class KrisEnvTuple(gym.Env,Node):
         return done
 
     def _get_reward(self):
-        reward=0.0 
-        return reward
+        '''
+        Returns the reward based on the observation
+        '''
+        # Since GAIL is inverse reinforcement learning, the reward is not defined
+        return NotImplementedError
     
     def _is_done(self,observation):
         # target_vector = observation['target_vector']
@@ -181,7 +184,7 @@ class KrisEnvTuple(gym.Env,Node):
         
     def _get_info(self):
         target_progress = self.goal_pose_data - self.odoms_filtered
-        info = {'target_vector':np.linalg.norm(target_progress)}
+        info = {'target_vector abs ':np.linalg.norm(target_progress)}
 
         return info
     
@@ -245,4 +248,5 @@ class KrisEnvTuple(gym.Env,Node):
 
         '''
         print("Closing the environment")
-        # self.destroy_node()
+        self.reset()
+        # super().close()

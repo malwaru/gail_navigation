@@ -102,4 +102,6 @@ def preprocess_target(target):
     Returns:
     The preprocessed image
     '''
-    return torch.from_numpy(np.array(target,dtype=np.float32))
+    target=np.array(target,dtype=np.float32)
+    target=np.reshape(target,-1)
+    return torch.from_numpy(target)
