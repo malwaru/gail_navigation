@@ -13,6 +13,9 @@ import PIL, PIL.Image
 from cv_bridge import CvBridge
 import cv2
 from kris_envs.wrappers.utilities import img_resize
+import glob
+import os
+import pathlib
 
 class BagReaderNode(Node):
     def __init__(self):
@@ -23,13 +26,13 @@ class BagReaderNode(Node):
 
         # Basic setting to use
         # Define the HDF5 file
-        file_path="/home/foxy_user/foxy_ws/src/gail_navigation/GailNavigationNetwork/data/traj2.hdf5"
+        file_path=os.getcwd()+'/'+os.path.basename(os.getcwd())+'.hdf5'
         self.hdf5_file = h5py.File(file_path, "w")
         self.image_shape=(240,320)
         self.image_compression_ratio=1.0
         self.image_shape_resized=(int(self.image_shape[0]*int(self.image_compression_ratio)),
                                   int(self.image_shape[1]*int(self.image_compression_ratio)))
-        self.bag_read_freq=2.0
+        self.bag_read_freq=1.0
         # Define datasets    
         self.images= self.hdf5_file.create_group("images")
         self.kris_dynamics= self.hdf5_file.create_group("kris_dynamics")
@@ -57,6 +60,7 @@ class BagReaderNode(Node):
 
         # Create a timer to read bag data every n seconds
         self.create_timer(self.bag_read_freq, self.read_bag_data)
+        # self.future = self.create_future()  # Create a future to wait for the goal pose
 
         # The topic list to read from the bag file
         self.topics_list = [
@@ -196,7 +200,7 @@ class BagReaderNode(Node):
         self.get_logger().info("The target shape is: {}".format(target.shape))
         self.odom_data.create_dataset("target_vector", data=target)
         self.destroy_node()
-        
+     
 
     def gps_fix_callback(self, msg):
         self.gps_fix_data = msg
@@ -318,6 +322,8 @@ class BagReaderNode(Node):
         # Close the HDF5 file when the node is destroyed
         self.hdf5_file.close()
         super().destroy_node()
+
+        
 
 
 def main(args=None):

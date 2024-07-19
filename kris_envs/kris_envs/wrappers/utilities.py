@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import torch
 
 def normalise_action(act_arr,
                      act_lin_rng=[-1,1],
@@ -20,7 +21,6 @@ def normalise_action(act_arr,
     act_arr[:3] = (act_arr[:3] - act_lin_rng[0]) / (act_lin_rng[1] - act_lin_rng[0]) * 2 - 1
     # Normalize the angular i , j , k , w values
     act_arr[:3] = (act_arr[:3] - act_ang_rng[0]) / (act_ang_rng[1] - act_ang_rng[0]) * 2 - 1
-
     
     return act_arr
 
@@ -44,6 +44,18 @@ def denormalise_action(act_arr,
     
     return act_arr
 
+
+
+def scale_arrays(array,new_min=-1, new_max=1):
+    '''
+    Scales the array to a new range
+    Default to -1 to 1
+    
+    '''
+    original_min = np.min(array)
+    original_max = np.max(array)
+    scaled_array = ((array - original_min) / (original_max - original_min)) * (new_max - new_min) + new_min
+    return scaled_array
 
 def transform_to_int8(arr,old_max=50.0):
     """
@@ -79,3 +91,17 @@ def img_resize(img,scale=1.0):
         
         '''
         return cv2.resize(img, (int(img.shape[1]*scale), int(img.shape[0]*scale)), interpolation=cv2.INTER_AREA)
+
+def preprocess_target(target):
+    '''
+    Preprocess the target vector to float32 tensor
+
+    Args:
+    img: np.array
+         The target vector to be preprocessed
+    Returns:
+    The preprocessed image
+    '''
+    target=np.array(target,dtype=np.float32)
+    target=np.reshape(target,-1)
+    return torch.from_numpy(target)

@@ -1,5 +1,4 @@
 from stable_baselines3 import PPO
-# import gymnasium as gym
 from imitation.util.util import make_vec_env
 import kris_envs
 from kris_envs.wrappers.trajgen import TrajFromFile
@@ -9,17 +8,44 @@ from imitation.util.networks import RunningNorm
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy, CnnPolicy
 from imitation.data.wrappers import RolloutInfoWrapper
+from stable_baselines3.common.evaluation import evaluate_policy
+from typing import Callable
 import rclpy
 import numpy as np
 
 
+def linear_schedule(initial_value: float) -> Callable[[float], float]:
+    """
+    Linear learning rate schedule.
 
+    :param initial_value: Initial learning rate.
+    :return: schedule that computes
+      current learning rate depending on remaining progress
+    """
+    def func(progress_remaining: float) -> float:
+        """
+        Progress will decrease from 1 (beginning) to 0.
 
-def train_gail(rollouts,no_envs=1):
+        :param progress_remaining:
+        :return: current learning rate
+        """
+        return progress_remaining * initial_value
+
+    return func
+
+def train_gail(rollouts,demo_batch_size,model_path=None,save_model=None,no_envs=1):
     '''
     Trains the GAIL model
     Args:
     rollouts: gymnasium.Transition
+    demo_batch_size: int 
+      Batch size of expert demonstrations
+    model_path: str
+        path of the model to load for training
+    save_model: str
+        name of the model to save after training
+    no_envs: int
+        number of vectorised environments to train on
 
     Returns:
     None
@@ -36,17 +62,22 @@ def train_gail(rollouts,no_envs=1):
     )
     SEED = 42
     print(f"[rl_train] Training GAIL with {len(rollouts)} rollouts")
+
+    if model_path is not None:
+        learner = PPO.load(model_path, env=env)
+
+    else:
     
-    learner = PPO(
-        env=env,
-        policy=MlpPolicy,
-        batch_size=64, # Mini batch size
-        ent_coef=0.0,  # Entropy coefficient for the loss calculation
-        learning_rate=0.0004,
-        gamma=0.95, # Discount factor
-        n_epochs=5, # Number of epochs when optimizing the surrogate objective
-        seed=SEED,
-    )
+        learner = PPO(
+            env=env,
+            policy=MlpPolicy,
+            batch_size=64, # Mini batch size
+            ent_coef=0.0,  # Entropy coefficient for the loss calculation
+            learning_rate=linear_schedule(0.0009),
+            gamma=0.95, # Discount factor
+            n_epochs=5, # Number of epochs when optimizing the surrogate objective
+            seed=SEED,
+        )
     print(f"[rl_train] Defining rewardnet")
     reward_net = BasicRewardNet(
         observation_space=env.observation_space,
@@ -55,26 +86,38 @@ def train_gail(rollouts,no_envs=1):
     )
     gail_trainer = GAIL(
         demonstrations=rollouts,
-        demo_batch_size=24, # Batch size of expert demonstrations
+        demo_batch_size=demo_batch_size-1, # Batch size of expert demonstrations
         gen_replay_buffer_capacity=512, # Capacity of the replay buffer number of obs-action-obs samples from the generator that can be stored)
         n_disc_updates_per_round=8, # Number of discriminator updates per round of training
         venv=env,
         gen_algo=learner,
         reward_net=reward_net,
         allow_variable_horizon=False,
+        
     )
 
     env.seed(SEED)
-    # learner_rewards_before_training, _ = evaluate_policy(
-    #     learner, env, 100, return_episode_rewards=True
-    # )
-    print(f"[rl_train] Entering GAIL training  ")
+    print(f"[rl_train] Starting GAIL training  ")
     gail_trainer.train(2048)
-    print(f"[rl_train] Training complete")
-    learner.save("PPO_KrisEnv-v1")
+    print(f"[rl_train] Training complete") 
+    if save_model is not None:
+        model_save_path="../../GailNavigationNetwork/data/models/"+save_model
+        learner.save(model_save_path)
+
 
 if __name__ == "__main__":
-    file_path="../../GailNavigationNetwork/data/traj2.hdf5"
-    traj_generator=TrajFromFile(file_path)
-    batch_size,demonstrations=traj_generator.create_demos()
-    # train_gail(demonstrations)
+    file_path="../../GailNavigationNetwork/data/trajectories/expert/medium_world/traj4.hdf5"
+    # folder_path="../../GailNavigationNetwork/data/trajectories/hard_world"
+    model_folder_path="../../GailNavigationNetwork/data/models/"
+    # model_name="PPO_KrisEnv-v5_total"
+    # model_path=model_folder_path+"/"+model_name
+    model_path=None
+    model_name=None
+    
+    save_model="PPO_KrisEnv-v6_total"
+    traj_generator=TrajFromFile(file_path,visualise_img=False)
+    batch_size,demonstrations=traj_generator.create_demos_from_file()
+    # batch_size,demonstrations=traj_generator.create_demos_from_folder()
+    train_gail(rollouts=demonstrations,demo_batch_size=batch_size,
+               model_path=model_path,save_model=save_model,
+               no_envs=1)

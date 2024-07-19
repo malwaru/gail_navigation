@@ -16,17 +16,12 @@ register(
     max_episode_steps=300,   
 )
 
-# The RGB image observation space environment
+# Same as above but for testing the agent 
 
 register(
-    id="kris_envs/KrisEnv-v2",
-    entry_point="kris_envs.envs:KrisEnvRgb",
+    id="kris_envs/KrisEnv-v1-2",
+    entry_point="kris_envs.envs:KrisEnvTupleTest",
     max_episode_steps=300,   
 )
-# The Depth image observation space environment
-register(
-    id="kris_envs/KrisEnv-v3",
-    entry_point="kris_envs.envs:KrisEnvDepth",
-    max_episode_steps=300,   
-)
+
 
