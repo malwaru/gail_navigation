@@ -106,6 +106,8 @@ class GazeboConnection(Node):
         else:
             self.get_logger().error("/gazebo/reset_simulation service call failed")
 
+                
+
     
 
     def reset_world(self):
