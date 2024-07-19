@@ -1,5 +1,6 @@
 #
 GailNavigationNetwork/data/*
+tests/
 # PyBuilder
 target/
 *.egg-info/

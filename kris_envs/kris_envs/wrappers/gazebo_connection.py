@@ -27,6 +27,7 @@ class GazeboConnection(Node):
         self.unpause = self.create_client(Empty, '/unpause_physics')
         self.pause = self.create_client(Empty, '/pause_physics')
         self.reset_proxy = self.create_client(Empty, '/reset_simulation')
+        self.reset_worlf= self.create_client(Empty, '/reset_world')
         self.spawn_model = self.create_client(SpawnEntity, '/spawn_entity')
         self.delete_model = self.create_client(DeleteEntity, '/delete_entity')
         self.goal_pose_pub = self.create_publisher(PoseStamped,'/goal_pose',10)
@@ -65,7 +66,7 @@ class GazeboConnection(Node):
 
     def unpause_sim(self):
         '''
-        Unpause the simulation
+        Unpause the phsyics of simulation
         '''
         request = Empty.Request()
         future = self.unpause.call_async(request)
@@ -75,15 +76,20 @@ class GazeboConnection(Node):
         else:
             self.get_logger().error("/gazebo/unpause_physics service call failed")
 
-    def load_yaml(self,file_path='../../../GailNavigationNetwork/data/start_poses_hard.yaml'):
+            
+
+    def load_yaml(self,file_path='../../GailNavigationNetwork/data/Misc/start_poses.yaml',word_type='hard'):
         '''
         load data ffrom a yaml file
         
         '''
+        import os
+        cwd = os.getcwd()
+        print(cwd)
         with open(file_path, 'r') as file:
             data = yaml.safe_load(file)
 
-        start_poses = np.array(data.get['start_poses',[]])
+        start_poses = data[word_type]
         
         return start_poses
 
@@ -110,9 +116,9 @@ class GazeboConnection(Node):
         time.sleep(1)
         self.delete_entity()
         time.sleep(1)
-        origin, goal = self.generate_poses(max_val=15.0, min_val=-15.0, max_diff=10.0)
+        origin, goal = self.generate_poses(max_val=15.0, min_val=-15.0, max_diff=10.0)        
+        self.spawn_robot(origin)
         self.goal_pose_pub.publish(goal)
-        self.spawn_robot(origin, goal)
         # Wait for all the sensors to load correctly
         time.sleep(3)
 
@@ -129,7 +135,7 @@ class GazeboConnection(Node):
         if self.spawn_model.wait_for_service(timeout_sec=timeout):
             req = SpawnEntity.Request()
             req.name = self.entity
-            req.xml = str(entity_xml, 'utf-8')
+            req.xml = str(entity_xml,'utf-8')
             req.robot_namespace = ''
             req.initial_pose = initial_pose
             req.reference_frame = ''
@@ -157,6 +163,7 @@ class GazeboConnection(Node):
         start_pose_int = np.random.randint(0,10)
         origin_x = start_pose_array[start_pose_int][0]
         origin_y = start_pose_array[start_pose_int][1]            
+        origin_z= start_pose_array[start_pose_int][2] 
         origin_yaw = self.quaternion_from_euler(0.0,0.0,np.random.uniform(0, 2 * np.pi) )  # Assuming yaw is in radians
 
         # Calculate the range for the grid
@@ -177,7 +184,7 @@ class GazeboConnection(Node):
         origin_pose = Pose()
         origin_pose.position.x = origin_x
         origin_pose.position.y = origin_y
-        origin_pose.position.z = 6.0      
+        origin_pose.position.z = origin_z     
         origin_pose.orientation.x = origin_yaw[0]
         origin_pose.orientation.y = origin_yaw[1]
         origin_pose.orientation.z = origin_yaw[2]

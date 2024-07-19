@@ -4,7 +4,7 @@ import numpy as np
 import h5py
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
-from kris_envs.wrappers.utilities import normalise_action, transform_to_int8
+from kris_envs.wrappers.utilities import normalise_action, transform_to_int8, preprocess_target,scale_arrays
 import cv2
 import glob
 
@@ -73,16 +73,22 @@ class TrajFromFile:
             # Convert depth to int8
             depth=transform_to_int8(depth)
             depth=preprocess(depth)
-            (rgb, depth) = (rgb.to(DEVICE), depth.to(DEVICE))
-            rgb_features, depth_features = model(rgb,depth)
+            target=preprocess_target(target)
+            (rgb, depth,target) = (rgb.to(DEVICE),depth.to(DEVICE),target.to(DEVICE))
+            rgb_features, depth_features,target_features = model(rgb,depth,target)
+            #Detach the tensors and convert to numpy arrays and scale the arrays
             rgb_features=rgb_features.detach().cpu().numpy()
+            rgb_features=scale_arrays(rgb_features)
             depth_features=depth_features.detach().cpu().numpy()
+            depth_features=scale_arrays(depth_features)
+            target_features=target_features.detach().cpu().numpy()
+            target_features=scale_arrays(target_features)
             ## If visualisation is needed
             if self.visualise_img:
                 self.visualise(rgb_features,depth_features)  
-            rgbs.append(rgb_features.flatten())
-            depths.append(depth_features.flatten())
-            targets.append(target.flatten()) 
+            rgbs.append(rgb_features)
+            depths.append(depth_features)
+            targets.append(target_features) 
             acts.append(act)
             
         #Create actions by shifting the odom array to get where the agent moveed 
@@ -140,16 +146,22 @@ class TrajFromFile:
                 # Convert depth to int8
                 depth=transform_to_int8(depth)
                 depth=preprocess(depth)
-                (rgb, depth) = (rgb.to(DEVICE), depth.to(DEVICE))
-                rgb_features, depth_features = model(rgb,depth)
+                target=preprocess_target(target)
+                (rgb, depth,target) = (rgb.to(DEVICE),depth.to(DEVICE),target.to(DEVICE))
+                rgb_features, depth_features,target_features = model(rgb,depth,target)
+                #Detach the tensors and convert to numpy arrays and scale the arrays
                 rgb_features=rgb_features.detach().cpu().numpy()
+                rgb_features=scale_arrays(rgb_features)
                 depth_features=depth_features.detach().cpu().numpy()
+                depth_features=scale_arrays(depth_features)
+                target_features=target_features.detach().cpu().numpy()
+                target_features=scale_arrays(target_features)
                 ## If visualisation is needed
                 if self.visualise_img:
                     self.visualise(rgb_features,depth_features)  
-                rgbs.append(rgb_features.flatten())
-                depths.append(depth_features.flatten())
-                targets.append(target.flatten()) 
+                rgbs.append(rgb_features)
+                depths.append(depth_features)
+                targets.append(target_features) 
                 acts.append(act)
             read_file.close()
             total_batch_size+=batch_size
@@ -164,7 +176,7 @@ class TrajFromFile:
         rgbs=np.array(rgbs)
         depths=np.array(depths)
         targets=np.array(targets)
-        obs_array=np.concatenate((targets,rgbs,depths),axis=1)
+        obs_array=np.concatenate((targets,rgbs,depths),axis=0)
         print(f"[kris_env:trajgen] observation array shape {obs_array.shape}")
         traj = Trajectory(obs=obs_array, acts=acts,infos=infos,terminal=dones)
 

@@ -10,11 +10,14 @@ import cv2
 import numpy as np
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
+from kris_envs.wrappers.utilities import normalise_action, transform_to_int8, preprocess_target,scale_arrays
+
 # from stable_baselines3.common.env_checker import check_env
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 from kris_envs.wrappers.gazebo_connection import GazeboConnection
+import torch
 
 
 
@@ -65,14 +68,15 @@ class KrisEnv(gym.Env,Node):
         # GailNavigationNetwork  NaviNet
         # The channel shape are taken from the output of the NaviNet
         self.observation_space = spaces.Dict({
-            'target_vector': spaces.Box(low=-100.0, high=100.0, shape=(1,7), dtype=np.float32),
-            'rgb_features': spaces.Box(low=-np.inf, high=np.inf, shape=(1280, 8, 10), dtype=np.float32),
-            'depth_features': spaces.Box(low=-np.inf, high=np.inf, shape=(238,318), dtype=np.float32)
+            'target_vector': spaces.Box(low=-100.0, high=100.0, shape=(1280,), dtype=np.float32),
+            'rgb_features': spaces.Box(low=-np.inf, high=np.inf, shape=(1280,), dtype=np.float32),
+            'depth_features': spaces.Box(low=-np.inf, high=np.inf, shape=(1280,), dtype=np.float32)
         })
 
-
-        self.model= NaviNet()
+        self.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model= NaviNet().to(self.DEVICE)
         self.model.eval()
+        
 
         
     def depth_image_raw_callback(self, msg):
@@ -121,17 +125,28 @@ class KrisEnv(gym.Env,Node):
         ========
         the image from the camera
         '''
-        rgb_image=preprocess(self.image_raw_data)
-        depth_image=preprocess(self.depth_image_raw_data)  
-        rgb_features, depth_features = self.model(rgb_image,
-                                                  depth_image)
-        # self.get_logger().info(f"depth feature shape {depth_features.shape}")
         self.target_vector = self.goal_pose_data - self.odoms_filtered
-        self.get_logger().info(f"target vector shape {self.target_vector.shape}")
+        rgb_image=preprocess(self.image_raw_data)
+        depth_image=transform_to_int8(self.depth_image_raw_data)
+        depth_image=preprocess(depth_image)        
+        target=preprocess_target(self.target_vector)
+        (rgb_image, depth_image,target) = (rgb_image.to(self.DEVICE),
+                                           depth_image.to(self.DEVICE),
+                                           target.to(self.DEVICE))  
+
+        rgb_features, depth_features,target_features = self.model(rgb_image,
+                                                  depth_image,target)
+        #Detach the tensors and convert to numpy arrays and scale the arrays
+        rgb_features=rgb_features.detach().cpu().numpy()
+        rgb_features=scale_arrays(rgb_features)
+        depth_features=depth_features.detach().cpu().numpy()
+        depth_features=scale_arrays(depth_features)
+        target_features=target_features.detach().cpu().numpy()
+        target_features=scale_arrays(target_features)
         observation = {
-            'target_vector': self.target_vector,
-            'rgb_features': rgb_features.detach().cpu().numpy(),
-            'depth_features': depth_features.detach().cpu().numpy()
+            'target_vector': target_features,
+            'rgb_features': rgb_features,
+            'depth_features': depth_features
         }
         return observation
     
