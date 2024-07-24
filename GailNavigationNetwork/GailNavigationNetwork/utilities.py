@@ -8,7 +8,7 @@ if torch.cuda.is_available():
 else:
     DEVICE="cpu"
     PIN_MEMORY=False        
-print(f"Available device is {DEVICE} of name {torch.cuda.get_device_name(torch.cuda.current_device())}\n")
+# print(f"Available device is {DEVICE} of name {torch.cuda.get_device_name(torch.cuda.current_device())}\n")
 
 
 

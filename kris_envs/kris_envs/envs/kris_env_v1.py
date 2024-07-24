@@ -4,10 +4,13 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image,CameraInfo
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist,PoseStamped,Pose
+from geometry_msgs.msg import PoseStamped,Pose
+from std_msgs.msg import Bool
+
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
+from collections import deque
 from GailNavigationNetwork.model import NaviNet
 from GailNavigationNetwork.utilities import preprocess
 # from stable_baselines3.common.env_checker import check_env
@@ -41,7 +44,7 @@ class KrisEnvTuple(gym.Env,Node):
         self.goal_pose_sub = self.create_subscription(
             PoseStamped, '/target_goal', self.goal_pose_callback, 10)
         self.camera_info_sub = self.create_subscription(
-            CameraInfo, '/framos/camera_info', self.camera_info_callback, 10)        
+            CameraInfo, '/framos/camera_info', self.camera_info_callback, 10)    
         self.sub_goal_pose_pub = self.create_publisher(
             PoseStamped,'/subgoal_pose', 10)
 
@@ -53,9 +56,14 @@ class KrisEnvTuple(gym.Env,Node):
         self.depth_camera_info_data = None
         self.goal_pose_data = np.zeros(shape=(1,7),dtype=np.float32)
         self.odoms_filtered = np.zeros(shape=(1,7),dtype=np.float32)
-        self.target_vector = np.zeros(shape=(1,7),dtype=np.float32)
+        self.target_vector = None
         self.target_vector_tolerance = 1.0 # meters
         self.observation_delay=1.0 # seconds to wait for the observation to be ready
+        #variables for truncating the episode
+        self._truncated_status=False
+        self.last_time = time.time()
+        self.position_window_size=10.0# seconds
+        self.last_positions = deque()
 
         while self.image_raw_data is None:
             self.get_logger().info("Waiting for camera feed")
@@ -122,6 +130,7 @@ class KrisEnvTuple(gym.Env,Node):
                     msg.pose.orientation.z,
                     msg.pose.orientation.w]
         self.goal_pose_data = np.array(goal_data,dtype=np.float32)
+        
     def camera_info_callback(self, msg):
         self.depth_camera_info_data = msg
         self.depth_camera_height = msg.height
@@ -172,15 +181,26 @@ class KrisEnvTuple(gym.Env,Node):
         '''
         Returns the reward based on the observation
         '''
-        # Since GAIL is inverse reinforcement learning, the reward is not defined
-        return NotImplementedError
+        # Gives a dummy sparse reward for so the env does not give an error but the reward is not used
+        # when using inverse reinforcement learning
+        return [1 if self._is_done() else -1]
     
-    def _is_done(self,observation):
-        # target_vector = observation['target_vector']
-        if np.linalg.norm(self.target_vector) < self.target_vector_tolerance:
-            return True
+    def _is_done(self):
+
+        if self.target_vector is not None:
+            abs_distance = np.sqrt(np.sum(np.square(self.target_vector[0:2])))
+            if (abs_distance < self.target_vector_tolerance):
+                return True
         else:
             return False
+    
+        
+    def _is_truncted(self):
+        return self._truncated_status
+        
+    def truncate_callback(self,msg):
+        self._truncated_status=msg.data
+     
         
     def _get_info(self):
         target_progress = self.goal_pose_data - self.odoms_filtered
@@ -217,7 +237,10 @@ class KrisEnvTuple(gym.Env,Node):
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset()
-        self.gazebo.reset_world()
+        self.get_logger().info(f"Resetting the environment cause its done: {self._is_done()} ir truncatad: {self._is_truncted()}")
+        if self._is_done() or self._is_truncted():
+            self.get_logger().info(f"Resetting the environment targer vector is {self.target_vector}")
+            self.gazebo.reset_world()
         new_obs = self._get_obs()
 
         return new_obs,{}
@@ -234,8 +257,10 @@ class KrisEnvTuple(gym.Env,Node):
         done=self.do_action(action)
         observation = self._get_obs()
         reward = self._get_reward()
-        terminated = self._is_done(observation)
+        terminated = self._is_done()
+        trunctated=self._is_truncted()
         info=self._get_info()
+        self.get_logger().info(f"Terminated:{terminated} \n Truncated : {trunctated} \n Info:{info} \n \n")
         return observation, reward, terminated, False, info
     
     def render(self):
