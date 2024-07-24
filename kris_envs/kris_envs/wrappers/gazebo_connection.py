@@ -114,6 +114,8 @@ class GazeboConnection(Node):
         '''
         Reset the simulation and spawn the robot again        
         '''
+        time.sleep(2)
+        self.pause_sim()
         self.reset_sim()  
         time.sleep(1)
         self.delete_entity()
@@ -122,7 +124,9 @@ class GazeboConnection(Node):
         self.spawn_robot(origin)
         self.goal_pose_pub.publish(goal)
         # Wait for all the sensors to load correctly
+        self.unpause_sim()
         time.sleep(3)
+
 
 
 
@@ -306,4 +310,7 @@ class GazeboConnection(Node):
         q[3] = sy * cp * cr - cy * sp * sr
 
         return q
+    
+    def destroy_current_node(self) -> bool:
+        return super().destroy_node()
 
