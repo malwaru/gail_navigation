@@ -78,18 +78,18 @@ class GazeboConnection(Node):
 
             
 
-    def load_yaml(self,file_path='../../GailNavigationNetwork/data/Misc/start_poses.yaml',word_type='hard'):
+    def load_yaml(self,file_path='../../GailNavigationNetwork/data/Misc/start_poses.yaml',world_type='hard'):
         '''
         load data ffrom a yaml file
         
         '''
-        import os
-        cwd = os.getcwd()
-        print(cwd)
+        # import os
+        # cwd = os.getcwd()
+        # print(cwd)
         with open(file_path, 'r') as file:
             data = yaml.safe_load(file)
 
-        start_poses = data[word_type]
+        start_poses = data[world_type]
         
         return start_poses
 

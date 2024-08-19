@@ -77,6 +77,8 @@ def train_gail(rollouts,demo_batch_size,model_path=None,save_model=None,no_envs=
             gamma=0.95, # Discount factor
             n_epochs=5, # Number of epochs when optimizing the surrogate objective
             seed=SEED,
+            verbose=1,
+            tensorboard_log="../../GailNavigationNetwork/data/tensorboard/",
         )
     print(f"[rl_train] Defining rewardnet")
     reward_net = BasicRewardNet(

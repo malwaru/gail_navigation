@@ -44,6 +44,67 @@ class CmdVelPublisher(Node):
         '''
         self.publish_goal_pose(msg)
 
+    def pid_generator(self,error_linear,error_angular):
+        '''
+        
+        '''
+        vel_linear=0.0
+        vel_angular=0.0
+        # If goal is behind the robot, the robot will turn on the spot
+        if error_linear<0.00:            
+            vel_linear=0.0
+            #Allows to turn faster 
+            vel_angular=-1.0*min(error_angular*self.pid_angualar[0],self.cmd_vel_angular_max)+0.5
+
+        else:
+            proportional_linear=error_linear*self.pid_linear[0]
+            integral_linear=self.error_total_linear*self.pid_linear[1]
+            #Ignore dt term for simplicity
+            derivative_linear=(error_linear-self.error_previous_linear)*self.pid_linear[2]
+            vel_linear=proportional_linear+integral_linear+derivative_linear
+            self.error_previous_linear=error_linear
+
+            proportional_angular=error_angular*self.pid_angualar[0]
+            integral_angular=self.error_total_angular*self.pid_angualar[1]
+            #Ignore dt term for simplicity
+            derivative_angular=(error_angular-self.error_previous_angular)*self.pid_angualar[2]
+            vel_angular=proportional_angular+integral_angular+derivative_angular
+            self.error_previous_angular=error_angular
+
+            vel_linear=min(vel_linear,self.cmd_vel_linear_max)#+self.error_total_linear*self.pid_linear[1]
+            vel_angular=-1.0*min(error_angular*self.pid_angualar[0],self.cmd_vel_angular_max)#+self.error_total_angular*self.pid_angualar[1]
+
+       
+
+        return vel_linear,vel_angular
+
+    def velocity_generator(self,error_linear,error_angular):
+        '''
+        Generate velocity depending on the error
+        The robot moves linearly while turning if the goal is in the positive 
+        direction
+        It goal is in negative direction the robot turn on the spot until
+        the goal is in positive direction 
+        
+        '''
+        vel_linear=0.0
+        vel_angular=0.0
+        ## Check for sign instead
+        if error_linear<0.00:            
+            vel_linear=0.0
+            #Allows to turn faster 
+            vel_angular=-1.0*min(error_angular*self.pid_angualar[0],self.cmd_vel_angular_max)+0.5
+            
+
+        else:
+            vel_linear=min(error_linear*self.pid_linear[0],self.cmd_vel_linear_max)#+self.error_total_linear*self.pid_linear[1]
+            vel_angular=-1.0*min(error_angular*self.pid_angualar[0],self.cmd_vel_angular_max)#+self.error_total_angular*self.pid_angualar[1]
+
+       
+
+        return vel_linear,vel_angular
+   
+
     def publish_goal_pose(self,pose_stamped):
         '''
         Published cmd_vel commands based on the leader pose 
@@ -68,18 +129,8 @@ class CmdVelPublisher(Node):
         error_angular=np.arctan2(dy,dx)
         self.error_total_angular+=error_angular
 
+        vel_linear,vel_angular=self.velocity_generator(error_linear,error_angular)
         
-        vel_linear=0.0
-        vel_angular=0.0
-
-        vel_linear=min(error_linear*self.pid_linear[0],self.cmd_vel_linear_max)#+self.error_total_linear*self.pid_linear[1]
-        vel_angular=-1.0*min(error_angular*self.pid_angualar[0],self.cmd_vel_angular_max)#+self.error_total_angular*self.pid_angualar[1]
-
-        #Assuming the robot does not reverse
-        if error_linear<0.0:
-            vel_angular=0.0
-            vel_linear=0.0
-   
         velocity=Twist()
         velocity.linear.x=vel_linear
         velocity.angular.z=-vel_angular
